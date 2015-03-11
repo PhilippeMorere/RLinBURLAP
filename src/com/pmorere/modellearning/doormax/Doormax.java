@@ -14,6 +14,7 @@ import burlap.behavior.singleagent.planning.OOMDPPlanner;
 import burlap.behavior.singleagent.planning.QComputablePlanner;
 import burlap.behavior.singleagent.planning.ValueFunctionPlanner;
 import burlap.behavior.singleagent.planning.commonpolicies.GreedyQPolicy;
+import burlap.behavior.singleagent.planning.stochastic.rtdp.BoundedRTDP;
 import burlap.behavior.statehashing.StateHashFactory;
 import burlap.oomdp.core.*;
 import burlap.oomdp.singleagent.Action;
@@ -67,7 +68,7 @@ public class Doormax extends OOMDPPlanner implements LearningAgent, QComputableP
         //this.planner = new BoundedRTDP(modeledDomain, model.getModelRF(), model.getModelTF(), gamma, hashingFactory,
         //        new ValueFunctionInitialization.ConstantValueFunctionInitialization(-10.0), new ValueFunctionInitialization.ConstantValueFunctionInitialization(0.0), 0.1, 30);
 
-        this.planner = new DoormaxPlanner(mdg.generateDomain(), rf, this.model.getModelTF(), gamma, hashingFactory, rmax);
+        this.planner = new DoormaxPlanner(this.modeledDomain, rf, this.model.getModelTF(), gamma, hashingFactory, rmax - 10, rmax, 0.1, 10);
 
         //this.policy = new BoltzmannQPolicy(this, 0.1);
         this.policy = new GreedyQPolicy(this);
@@ -126,42 +127,31 @@ public class Doormax extends OOMDPPlanner implements LearningAgent, QComputableP
         //DomainMappedPolicy policy = new DomainMappedPolicy(domain, this.modelPlanner.modelPlannedPolicy());
         //Policy policy = this.createDomainMappedPolicy();
 
+        GroundedAction lastAction = null;
+        GroundedAction lastAction2 = null;
+        GroundedAction lastAction3 = null;
+        GroundedAction lastAction4 = null;
+        GroundedAction lastAction5 = null;
+        GroundedAction lastAction6 = null;
         State curState = initialState;
         int steps = 0;
         while (!this.tf.isTerminal(curState) && (steps < maxSteps || maxSteps == -1)) {
             GroundedAction ga = (GroundedAction) policy.getAction(curState);
             State nextState = ga.executeIn(curState);
             double r = this.rf.reward(curState, ga, nextState);
-
-            /*System.out.println(ga);
-            System.out.println(this.model.transitionIsModeled(curState, ga));
-            if(steps == 2)
-                throw new RuntimeException("boom");*/
             ea.recordTransitionTo(ga, nextState, r);
 
-            //if (!this.model.transitionIsModeled(curState, ga)) {
             this.model.updateModel(curState, ga, nextState, r, this.tf.isTerminal(nextState));
-            //if (this.model.transitionIsModeled(curState, ga)) {
-            //System.out.println("Updating planner.");
-            //this.modelPlanner.modelChanged(curState);
             this.planner.performBellmanUpdateOn(curState);
-            //policy = this.createDomainMappedPolicy();
-            //policy = new GreedyQPolicy(this.planner);
-            //}
-            //}
-
 
             curState = nextState;
-
             steps++;
         }
 
-        if (episodeHistory.size() >= numEpisodesToStore) {
+        if (episodeHistory.size() >= numEpisodesToStore)
             episodeHistory.poll();
-        }
+
         episodeHistory.offer(ea);
-
-
         return ea;
     }
 
@@ -196,7 +186,6 @@ public class Doormax extends OOMDPPlanner implements LearningAgent, QComputableP
         throw new RuntimeException("Model learning algorithms should not be used as planning algorithms.");
     }
 
-
     @Override
     public void resetPlannerResults() {
         this.model.resetModel();
@@ -223,7 +212,6 @@ public class Doormax extends OOMDPPlanner implements LearningAgent, QComputableP
         return qs;
     }
 
-
     @Override
     public QValue getQ(State s, AbstractGroundedAction a) {
 
@@ -249,7 +237,7 @@ public class Doormax extends OOMDPPlanner implements LearningAgent, QComputableP
         this.policy = policy;
     }
 
-    protected class DoormaxPlanner extends ValueFunctionPlanner {
+    protected class DoormaxPlanner extends BoundedRTDP {
 
         /**
          * Initializes
@@ -259,10 +247,11 @@ public class Doormax extends OOMDPPlanner implements LearningAgent, QComputableP
          * @param tf             the modeled terminal function
          * @param gamma          the discount factor
          * @param hashingFactory the hashing factory
-         * @param vInit          the constant value function initialization to use
          */
-        public DoormaxPlanner(Domain domain, RewardFunction rf, TerminalFunction tf, double gamma, StateHashFactory hashingFactory, double vInit) {
-            this(domain, rf, tf, gamma, hashingFactory, new ValueFunctionInitialization.ConstantValueFunctionInitialization(vInit));
+        public DoormaxPlanner(Domain domain, RewardFunction rf, TerminalFunction tf, double gamma, StateHashFactory hashingFactory,
+                              double lowerVInit, double upperVInit, double maxDiff, int maxRollouts) {
+            this(domain, rf, tf, gamma, hashingFactory, new ValueFunctionInitialization.ConstantValueFunctionInitialization(lowerVInit),
+                    new ValueFunctionInitialization.ConstantValueFunctionInitialization(upperVInit), maxDiff, maxRollouts);
         }
 
 
@@ -274,15 +263,16 @@ public class Doormax extends OOMDPPlanner implements LearningAgent, QComputableP
          * @param tf             the modeled terminal function
          * @param gamma          the discount factor
          * @param hashingFactory the hashing factory
-         * @param vInit          the value function initialization to use
          */
-        public DoormaxPlanner(Domain domain, RewardFunction rf, TerminalFunction tf, double gamma, StateHashFactory hashingFactory, ValueFunctionInitialization vInit) {
-            VFPInit(domain, rf, tf, gamma, hashingFactory);
+        public DoormaxPlanner(Domain domain, RewardFunction rf, TerminalFunction tf, double gamma, StateHashFactory hashingFactory,
+                              ValueFunctionInitialization lowerVInit, ValueFunctionInitialization upperVInit, double maxDiff, int maxRollouts) {
+            super(domain, rf, tf, gamma, hashingFactory, lowerVInit, upperVInit, maxDiff, maxRollouts);
+            //VFPInit(domain, rf, tf, gamma, hashingFactory);
 
             //don't cache transition dynamics because our leanred model keeps changing!
             this.useCachedTransitions = false;
 
-            this.valueInitializer = vInit;
+            //this.valueInitializer = vInit;
         }
 
         @Override

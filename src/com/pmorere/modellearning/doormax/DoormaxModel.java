@@ -186,7 +186,7 @@ public class DoormaxModel extends Model {
             for (Prediction pred : entry.getValue())
                 if (pred.cond.matches(c)) {
                     found = true;
-                    entry.getKey().applyToState(newState);
+                    newState = entry.getKey().applyToState(newState);
                     break;
                 }
         }
@@ -377,7 +377,7 @@ public class DoormaxModel extends Model {
 
         public Prediction(Condition cond, GroundedAction act, Effect eff) {
             this.act = act;
-            this.cond = cond;
+            this.cond = cond.copy();
             this.eff = eff;
             this.cumulatedReward = 0;
             this.nbTries = 0;

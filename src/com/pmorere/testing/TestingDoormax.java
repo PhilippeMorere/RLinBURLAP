@@ -141,7 +141,7 @@ public class TestingDoormax {
 
         //run learning for 1000 episodes
         int maxTimeSteps = 200;
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 50; i++) {
             EpisodeAnalysis ea = agent.runLearningEpisodeFrom(initialState, maxTimeSteps);
             //if(ea.numTimeSteps() < maxTimeSteps)
             ea.writeToFile(String.format("%se%03d", outputPath, i), sp);
