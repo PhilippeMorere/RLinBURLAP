@@ -65,7 +65,6 @@ public class Scaffolding implements LearningAgent {
             throw new RuntimeException("Scaffolding tree is empty");
 
         ScaffoldStep step = this.scaffoldTree.root.children.get(0).data;
-        System.out.println("Starting step " + step.elementName);
 
         StateParser sp = step.sp;
         String newPath = outputPath.substring(0, outputPath.length() - 1) + step.elementName + "/";
@@ -73,7 +72,6 @@ public class Scaffolding implements LearningAgent {
         // System.out.println("episode " + episodeNb);
         EpisodeAnalysis ea = step.agent.runLearningEpisodeFrom(step.initialState, maxSteps);
 
-        System.out.println("Finished in "+ea.numTimeSteps()+" steps");
         // Save to file
         //ea.writeToFile(String.format("%se%03d", newPath, episodeNb), sp);
         episodeHistory.offer(ea);

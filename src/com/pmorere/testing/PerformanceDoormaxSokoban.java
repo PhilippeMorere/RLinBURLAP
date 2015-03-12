@@ -114,8 +114,8 @@ public class PerformanceDoormaxSokoban extends TestingScaffoldingSokoban {
 
         StateGenerator sg = new ConstantStateGenerator(this.initialState);
 
-        LearningAlgorithmExperimenter exp = new CustomExperimenter((SADomain) this.domain,
-                rf, sg, 10, 100, 200, doormaxFactory, sarsaLearningFactory);
+        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter((SADomain) this.domain,
+                rf, sg, 50, 100, doormaxFactory, scaffoldingDoormaxFactory, qLearningFactory);
 
         exp.setUpPlottingConfiguration(600, 350, 2, 1200,
                 TrialMode.MOSTRECENTANDAVERAGE,

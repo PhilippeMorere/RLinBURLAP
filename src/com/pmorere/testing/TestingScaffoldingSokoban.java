@@ -126,7 +126,7 @@ public class TestingScaffoldingSokoban {
 
         // Create the agent and add it to the scaffolding tree
         Doormax agent = new Doormax(domain, rf, tf, 0.99, hashingFactory, 1, 30, initialState, pfs, 0);
-        return scaff.addScaffoldingElementTo(parentStep, "Rock_Room_domain", domain, agent, initialState, new SokobanStateParser(domain), gwdg.getMap(), 30, 10);
+        return scaff.addScaffoldingElementTo(parentStep, "Rock_Room_domain", domain, agent, initialState, new SokobanStateParser(domain), gwdg.getMap(), 30, 20);
     }
 
     public Tree.Node createRoomDomainAgent(Scaffolding scaff, Tree.Node parentStep) {
