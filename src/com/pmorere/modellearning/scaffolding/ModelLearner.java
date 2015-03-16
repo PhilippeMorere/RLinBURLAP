@@ -9,4 +9,6 @@ import burlap.behavior.singleagent.learning.modellearning.Model;
 public interface ModelLearner extends LearningAgent{
 
     public abstract Model getModel();
+
+    public abstract void printModel();
 }

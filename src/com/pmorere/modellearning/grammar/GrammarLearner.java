@@ -10,7 +10,6 @@ import burlap.behavior.singleagent.learning.modellearning.ModeledDomainGenerator
 import burlap.behavior.singleagent.planning.OOMDPPlanner;
 import burlap.behavior.singleagent.planning.QComputablePlanner;
 import burlap.behavior.singleagent.planning.ValueFunctionPlanner;
-import burlap.behavior.singleagent.planning.commonpolicies.EpsilonGreedy;
 import burlap.behavior.singleagent.planning.commonpolicies.GreedyQPolicy;
 import burlap.behavior.singleagent.planning.stochastic.rtdp.BoundedRTDP;
 import burlap.behavior.statehashing.StateHashFactory;
@@ -168,6 +167,11 @@ public class GrammarLearner extends OOMDPPlanner implements LearningAgent, QComp
 
     public Model getModel() {
         return model;
+    }
+
+    @Override
+    public void printModel() {
+        ((GrammarBasedModel) this.model).printRules();
     }
 
     private class GLPlanner extends BoundedRTDP {

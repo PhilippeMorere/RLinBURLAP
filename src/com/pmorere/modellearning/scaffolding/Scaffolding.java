@@ -101,7 +101,7 @@ public class Scaffolding implements LearningAgent {
                 episodeHistory.offer(ea);
                 episodeNb++;
             }
-            //step.agent.printModelRules();
+            step.agent.printModel();
             //System.out.println("Episode saved");
             visualizeGridWorld(step.map, step.domain, step.sp, newPath);
         }

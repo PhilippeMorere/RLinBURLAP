@@ -122,7 +122,7 @@ public class TeachingDoormax {
 
 
         // Print the rules
-        agent.printModelRules();
+        agent.printModel();
 
         //run learning for 1000 episodes
         int maxTimeSteps = 200;
@@ -141,7 +141,7 @@ public class TeachingDoormax {
         }
 
         // Print the rules
-        agent.printModelRules();
+        agent.printModel();
 
         // Evaluate optimal policy with this model
         Model model = ((Doormax) agent).getModel();

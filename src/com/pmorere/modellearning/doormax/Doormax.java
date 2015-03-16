@@ -75,7 +75,7 @@ public class Doormax extends OOMDPPlanner implements LearningAgent, QComputableP
         this.policy = new GreedyQPolicy(this);
     }
 
-    public void printModelRules() {
+    public void printModel() {
         ((DoormaxModel) model).displayFailureConditions();
         ((DoormaxModel) model).displayTermNames();
         ((DoormaxModel) model).displayPredictions();
@@ -90,7 +90,7 @@ public class Doormax extends OOMDPPlanner implements LearningAgent, QComputableP
     public void loadModelRules(Domain domain, String filePath) {
         ((DoormaxModel) model).loadModelRules(domain, filePath);
         System.out.println("Loaded rules:");
-        printModelRules();
+        printModel();
     }
 
     /**

@@ -152,7 +152,7 @@ public class TestingDoormax {
         }
 
         // Print the rules
-        ((Doormax) agent).printModelRules();
+        ((Doormax) agent).printModel();
         //((Doormax) agent).saveModelRules("doormax/");
 
         // Evaluate optimal policy with this model

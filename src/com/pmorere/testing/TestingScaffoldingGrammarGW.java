@@ -371,7 +371,6 @@ public class TestingScaffoldingGrammarGW {
         scaff.runSubTasks();
 
         // Run it
-
         int episodeNb = 0;
         System.out.println("Starting step 4 rooms");
         while (episodeNb++ < 10) {
@@ -381,8 +380,10 @@ public class TestingScaffoldingGrammarGW {
             // Save to file
             ea.writeToFile(String.format("%se%03d", outputPath, episodeNb), sp);
         }
+        agent.printModel();
         visualizeGridWorld(outputPath);
 
+        throw new RuntimeException("Wrong implrementation of scaffolding with grammar. Think about it...");
     }
 
 
