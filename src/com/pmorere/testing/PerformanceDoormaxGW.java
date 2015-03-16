@@ -20,10 +20,10 @@ import com.pmorere.modellearning.scaffolding.Tree;
 /**
  * Created by philippe on 10/03/15.
  */
-public class PerformanceDoormaxGridWorld extends TestingScaffoldingGridWorld {
+public class PerformanceDoormaxGW extends TestingScaffoldingDoormaxGW {
 
     public static void main(String[] args) {
-        PerformanceDoormaxGridWorld perf = new PerformanceDoormaxGridWorld();
+        PerformanceDoormaxGW perf = new PerformanceDoormaxGW();
         perf.createFullDomain();
         perf.experimenterAndPlotter();
     }

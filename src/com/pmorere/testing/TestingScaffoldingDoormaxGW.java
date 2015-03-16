@@ -21,7 +21,7 @@ import java.util.List;
 /**
  * Created by philippe on 09/03/15.
  */
-public class TestingScaffoldingGridWorld {
+public class TestingScaffoldingDoormaxGW {
     GridWorldDomain gwdg;
     Domain domain;
     StateParser sp;
@@ -32,12 +32,12 @@ public class TestingScaffoldingGridWorld {
     DiscreteStateHashFactory hashingFactory;
     List<PropositionalFunction> pfs;
 
-    public TestingScaffoldingGridWorld() {
+    public TestingScaffoldingDoormaxGW() {
     }
 
     public static void main(String[] args) {
 
-        TestingScaffoldingGridWorld example = new TestingScaffoldingGridWorld();
+        TestingScaffoldingDoormaxGW example = new TestingScaffoldingDoormaxGW();
         //example.testOnSokoban();
         String outputPath = "output/"; //directory to record results
 

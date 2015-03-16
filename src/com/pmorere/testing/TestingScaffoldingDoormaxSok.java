@@ -8,8 +8,6 @@ import burlap.oomdp.core.*;
 import burlap.oomdp.singleagent.RewardFunction;
 import burlap.oomdp.singleagent.SADomain;
 import burlap.oomdp.singleagent.common.UniformCostRF;
-import burlap.oomdp.singleagent.explorer.VisualExplorer;
-import burlap.oomdp.visualizer.Visualizer;
 import com.pmorere.modellearning.doormax.Doormax;
 import com.pmorere.modellearning.scaffolding.Scaffolding;
 import com.pmorere.modellearning.scaffolding.Tree;
@@ -21,7 +19,7 @@ import java.util.List;
 /**
  * Created by philippe on 10/03/15.
  */
-public class TestingScaffoldingSokoban {
+public class TestingScaffoldingDoormaxSok {
     SokobanDomain gwdg;
     Domain domain;
     StateParser sp;
@@ -32,12 +30,12 @@ public class TestingScaffoldingSokoban {
     DiscreteStateHashFactory hashingFactory;
     List<PropositionalFunction> pfs;
 
-    public TestingScaffoldingSokoban() {
+    public TestingScaffoldingDoormaxSok() {
     }
 
     public static void main(String[] args) {
 
-        TestingScaffoldingSokoban example = new TestingScaffoldingSokoban();
+        TestingScaffoldingDoormaxSok example = new TestingScaffoldingDoormaxSok();
         String outputPath = "output/"; //directory to record results
 
         //we will call planning and learning algorithms here

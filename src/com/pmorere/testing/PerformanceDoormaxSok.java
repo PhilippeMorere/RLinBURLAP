@@ -20,10 +20,10 @@ import com.pmorere.sokoban.SokobanStateParser;
 /**
  * Created by philippe on 10/03/15.
  */
-public class PerformanceDoormaxSokoban extends TestingScaffoldingSokoban {
+public class PerformanceDoormaxSok extends TestingScaffoldingDoormaxSok {
 
     public static void main(String[] args) {
-        PerformanceDoormaxSokoban perf = new PerformanceDoormaxSokoban();
+        PerformanceDoormaxSok perf = new PerformanceDoormaxSok();
         perf.createFullDomain();
         perf.experimenterAndPlotter();
     }
