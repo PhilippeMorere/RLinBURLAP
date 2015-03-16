@@ -20,6 +20,7 @@ import burlap.oomdp.core.*;
 import burlap.oomdp.singleagent.Action;
 import burlap.oomdp.singleagent.GroundedAction;
 import burlap.oomdp.singleagent.RewardFunction;
+import com.pmorere.modellearning.scaffolding.ModelLearner;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -27,7 +28,7 @@ import java.util.List;
 /**
  * Created by philippe on 19/02/15.
  */
-public class Doormax extends OOMDPPlanner implements LearningAgent, QComputablePlanner {
+public class Doormax extends OOMDPPlanner implements LearningAgent, QComputablePlanner, ModelLearner {
 
     /**
      * The model of the world that is being learned.

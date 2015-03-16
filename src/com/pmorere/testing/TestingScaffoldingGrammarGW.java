@@ -1,17 +1,23 @@
 package com.pmorere.testing;
 
+import burlap.behavior.singleagent.EpisodeAnalysis;
+import burlap.behavior.singleagent.EpisodeSequenceVisualizer;
 import burlap.behavior.singleagent.planning.StateConditionTest;
 import burlap.behavior.singleagent.planning.deterministic.TFGoalCondition;
 import burlap.behavior.statehashing.DiscreteStateHashFactory;
 import burlap.domain.singleagent.gridworld.GridWorldDomain;
 import burlap.domain.singleagent.gridworld.GridWorldStateParser;
+import burlap.domain.singleagent.gridworld.GridWorldVisualizer;
 import burlap.oomdp.auxiliary.StateParser;
 import burlap.oomdp.core.*;
 import burlap.oomdp.singleagent.RewardFunction;
 import burlap.oomdp.singleagent.SADomain;
 import burlap.oomdp.singleagent.common.SinglePFTF;
 import burlap.oomdp.singleagent.common.UniformCostRF;
-import com.pmorere.modellearning.doormax.Doormax;
+import burlap.oomdp.visualizer.Visualizer;
+import com.pmorere.modellearning.grammar.ExpressionParser;
+import com.pmorere.modellearning.grammar.GrammarLearner;
+import com.pmorere.modellearning.grammar.GrammarParser;
 import com.pmorere.modellearning.scaffolding.ModelLearner;
 import com.pmorere.modellearning.scaffolding.Scaffolding;
 import com.pmorere.modellearning.scaffolding.Tree;
@@ -20,9 +26,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by philippe on 09/03/15.
+ * Created by philippe on 16/03/15.
  */
-public class TestingScaffoldingDoormaxGW {
+public class TestingScaffoldingGrammarGW {
     GridWorldDomain gwdg;
     Domain domain;
     StateParser sp;
@@ -32,13 +38,85 @@ public class TestingScaffoldingDoormaxGW {
     State initialState;
     DiscreteStateHashFactory hashingFactory;
     List<PropositionalFunction> pfs;
+    GrammarParser gp;
+    ExpressionParser ep;
 
-    public TestingScaffoldingDoormaxGW() {
+    public TestingScaffoldingGrammarGW() {
+        // Set up the grammar
+        gp = new GrammarParser();
+        gp.addRule("Agent", "place");
+        gp.addRule("EAST", "place", "place");
+        gp.addRule("WEST", "place", "place");
+        gp.addRule("NORTH", "place", "place");
+        gp.addRule("SOUTH", "place", "place");
+        gp.addRule("EMPTY", "place", GrammarParser.BOOLEAN);
+        gp.addRule("AND", new String[]{GrammarParser.BOOLEAN, GrammarParser.BOOLEAN}, GrammarParser.BOOLEAN);
+        gp.addRule("OR", new String[]{GrammarParser.BOOLEAN, GrammarParser.BOOLEAN}, GrammarParser.BOOLEAN);
+        gp.addRule("NOT", GrammarParser.BOOLEAN, GrammarParser.BOOLEAN);
+    }
+
+    private ExpressionParser setupGrammar(final GridWorldDomain gwdg) {
+        return new ExpressionParser("Agent") {
+
+            int[][] map = gwdg.getMap();
+
+            @Override
+            public Object evaluateOperator(String symbol, Object[] args) {
+                if (symbol.equals("AND"))
+                    return (Boolean) args[0] && (Boolean) args[1];
+                else if (symbol.equals("OR"))
+                    return (Boolean) args[0] || (Boolean) args[1];
+                else if (symbol.equals("NOT"))
+                    return !(Boolean) args[0];
+                else if (symbol.equals("EMPTY")) {
+                    Pos pos = getXY((String) args[0]);
+                    if (pos.x >= gwdg.getWidth() || pos.x < 0 || pos.y >= gwdg.getHeight() || pos.y < 0)
+                        return false;
+                    return map[pos.x][pos.y] == 0;
+                } else if (symbol.equals("EAST")) {
+                    Pos pos = getXY((String) args[0]);
+                    return (pos.x + 1) + "," + pos.y;
+                } else if (symbol.equals("WEST")) {
+                    Pos pos = getXY((String) args[0]);
+                    return (pos.x - 1) + "," + pos.y;
+                } else if (symbol.equals("SOUTH")) {
+                    Pos pos = getXY((String) args[0]);
+                    return pos.x + "," + (pos.y - 1);
+                } else if (symbol.equals("NORTH")) {
+                    Pos pos = getXY((String) args[0]);
+                    return pos.x + "," + (pos.y + 1);
+                }
+                throw new RuntimeException("Unsupported symbol " + symbol);
+            }
+
+            private Pos getXY(String arg) {
+                int x, y;
+                if (arg.equals("Agent")) {
+                    ObjectInstance agent = sh.s.getObjectsOfTrueClass(GridWorldDomain.CLASSAGENT).get(0);
+                    x = agent.getDiscValForAttribute(GridWorldDomain.ATTX);
+                    y = agent.getDiscValForAttribute(GridWorldDomain.ATTY);
+                } else {
+                    String[] coord = arg.split(",");
+                    x = Integer.valueOf(coord[0]);
+                    y = Integer.valueOf(coord[1]);
+                }
+                return new Pos(x, y);
+            }
+
+            class Pos {
+                public int x, y;
+
+                public Pos(int x, int y) {
+                    this.x = x;
+                    this.y = y;
+                }
+            }
+        };
     }
 
     public static void main(String[] args) {
 
-        TestingScaffoldingDoormaxGW example = new TestingScaffoldingDoormaxGW();
+        TestingScaffoldingGrammarGW example = new TestingScaffoldingGrammarGW();
         //example.testOnSokoban();
         String outputPath = "output/"; //directory to record results
 
@@ -73,9 +151,7 @@ public class TestingScaffoldingDoormaxGW {
         hashingFactory.setAttributesForClass(GridWorldDomain.CLASSAGENT,
                 domain.getObjectClass(GridWorldDomain.CLASSAGENT).attributeList);
 
-        //set up the pfs
-        pfs = new ArrayList<PropositionalFunction>();
-        pfs.addAll(domain.getPropFunctions());
+        ep = setupGrammar(gwdg);
     }
 
     public Tree.Node createRoomDomainAgent(Scaffolding scaff, Tree.Node parentStep) {
@@ -114,7 +190,7 @@ public class TestingScaffoldingDoormaxGW {
         pfs.addAll(domain.getPropFunctions());
 
         // Create the agent and add it to the scaffolding tree
-        ModelLearner agent = new Doormax(domain, rf, tf, 0.99, hashingFactory, 1, 30, initialState, pfs, 0);
+        ModelLearner agent = new GrammarLearner(domain, rf, tf, 0.99, hashingFactory, gp, setupGrammar(gwdg), 0);
         return scaff.addScaffoldingElementTo(parentStep, "Room_domain", domain, agent, initialState, new GridWorldStateParser(domain), gwdg.getMap(), 20, 20);
     }
 
@@ -191,7 +267,7 @@ public class TestingScaffoldingDoormaxGW {
         pfs.add(domain.getPropFunction(GridWorldDomain.PFWALLWEST));
 
         // Create the agent and add it to the scaffolding tree
-        ModelLearner agent = new Doormax(domain, rf, tf, 0.99, hashingFactory, 1, 30, initialState, pfs, 0);
+        ModelLearner agent = new GrammarLearner(domain, rf, tf, 0.99, hashingFactory, gp, setupGrammar(gwdg), 0);
         return scaff.addScaffoldingElementTo(parentStep, "Vertical_domain", domain, agent, initialState, new GridWorldStateParser(domain), gwdg.getMap(), 1, 10);
     }
 
@@ -267,7 +343,7 @@ public class TestingScaffoldingDoormaxGW {
         pfs.add(domain.getPropFunction(GridWorldDomain.PFWALLSOUTH));
 
         // Create the agent and add it to the scaffolding tree
-        ModelLearner agent = new Doormax(domain, rf, tf, 0.99, hashingFactory, 1, 30, initialState, pfs, 0);
+        ModelLearner agent = new GrammarLearner(domain, rf, tf, 0.99, hashingFactory, gp, setupGrammar(gwdg), 0);
         return scaff.addScaffoldingElementTo(parentStep, "Horizontal_domain", domain, agent, initialState, new GridWorldStateParser(domain), gwdg.getMap(), 1, 10);
     }
 
@@ -281,7 +357,7 @@ public class TestingScaffoldingDoormaxGW {
 
         // Add the top node
         createFullDomain();
-        agent = new Doormax(domain, rf, tf, 0.99, hashingFactory, 1, 30, initialState, pfs, 0);
+        agent = new GrammarLearner(domain, rf, tf, 0.99, hashingFactory, gp, ep, 0);
         Tree.Node topStep = scaff.addScaffoldingElementTo(null, "Full_domain", domain, agent, initialState, new GridWorldStateParser(domain), gwdg.getMap(), 10, 200);
 
         // Add the top node
@@ -295,7 +371,23 @@ public class TestingScaffoldingDoormaxGW {
         scaff.runSubTasks();
 
         // Run it
-        scaff.runLearningEpisodeFrom(null);
 
+        int episodeNb = 0;
+        System.out.println("Starting step 4 rooms");
+        while (episodeNb++ < 10) {
+            System.out.println("episode " + episodeNb);
+            EpisodeAnalysis ea = scaff.runLearningEpisodeFrom(null, 200);
+
+            // Save to file
+            ea.writeToFile(String.format("%se%03d", outputPath, episodeNb), sp);
+        }
+        visualizeGridWorld(outputPath);
+
+    }
+
+
+    public void visualizeGridWorld(String outputPath) {
+        Visualizer v = GridWorldVisualizer.getVisualizer(gwdg.getMap());
+        EpisodeSequenceVisualizer evis = new EpisodeSequenceVisualizer(v, domain, sp, outputPath);
     }
 }

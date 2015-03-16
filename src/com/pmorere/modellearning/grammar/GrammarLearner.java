@@ -21,6 +21,7 @@ import burlap.oomdp.core.TerminalFunction;
 import burlap.oomdp.singleagent.Action;
 import burlap.oomdp.singleagent.GroundedAction;
 import burlap.oomdp.singleagent.RewardFunction;
+import com.pmorere.modellearning.scaffolding.ModelLearner;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -28,7 +29,7 @@ import java.util.List;
 /**
  * Created by philippe on 12/03/15.
  */
-public class GrammarLearner extends OOMDPPlanner implements LearningAgent, QComputablePlanner {
+public class GrammarLearner extends OOMDPPlanner implements LearningAgent, QComputablePlanner, ModelLearner {
 
     /**
      * The model of the world that is being learned.

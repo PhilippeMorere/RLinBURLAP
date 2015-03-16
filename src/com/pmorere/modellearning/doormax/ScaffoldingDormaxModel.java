@@ -6,6 +6,7 @@ import burlap.oomdp.core.PropositionalFunction;
 import burlap.oomdp.core.State;
 import burlap.oomdp.core.TransitionProbability;
 import burlap.oomdp.singleagent.GroundedAction;
+import com.pmorere.modellearning.scaffolding.ScaffoldableModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +14,7 @@ import java.util.List;
 /**
  * Created by philippe on 09/03/15.
  */
-public class ScaffoldingDormaxModel extends DoormaxModel {
+public class ScaffoldingDormaxModel extends DoormaxModel implements ScaffoldableModel {
     List<Model> subModels;
 
     /**
