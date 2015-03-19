@@ -48,16 +48,16 @@ public class TestingGrammarLearner {
     public static void main(String[] args) {
 
         TestingGrammarLearner example = new TestingGrammarLearner();
-        example.testOnGridWorld();
-        //example.testOnSokoban();
+        //example.testOnGridWorld();
+        example.testOnSokoban();
         String outputPath = "output/"; //directory to record results
 
         //we will call planning and learning algorithms here
         example.GLExample(outputPath);
 
         //run the visualizer
-        example.visualizeGridWorld(outputPath);
-        //example.visualizeSokoban(outputPath);
+        //example.visualizeGridWorld(outputPath);
+        example.visualizeSokoban(outputPath);
 
     }
 
@@ -298,7 +298,7 @@ public class TestingGrammarLearner {
             EpisodeAnalysis ea = agent.runLearningEpisodeFrom(initialState, maxTimeSteps);
             //if(ea.numTimeSteps() < maxTimeSteps)
             ea.writeToFile(String.format("%se%03d", outputPath, i), sp);
-            System.out.println(i + ": " + (ea.getReward(ea.numTimeSteps() - 1) > 0 ? "won " : "lost") + " in " +
+            System.out.println(i + " got reward " + ea.getReward(ea.numTimeSteps() - 1) + " in " +
                     ea.numTimeSteps() + " steps.");
             if ((ea.getReward(ea.numTimeSteps() - 1) > 0 && ea.numTimeSteps() < 23))
                 break;

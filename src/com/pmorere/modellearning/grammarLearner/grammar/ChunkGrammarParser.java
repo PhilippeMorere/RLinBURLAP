@@ -14,13 +14,14 @@ public class ChunkGrammarParser extends GrammarParser {
      * Chunks are simple expressions containing no logic, such as EMPTY(EAST(Agent)) or ROCK(WEST(WEST(Agent)))*
      */
     List<String> chunks = new ArrayList<String>();
+    private int maxGrammarLevel = 3;
 
     public void addChunck(String chunk) {
         chunks.add(chunk);
     }
 
     public void setGrammarLevel(int level) {
-        grammarLevel = level;
+        grammarLevel = Math.min(level, maxGrammarLevel);
     }
 
     /**

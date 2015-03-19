@@ -120,7 +120,6 @@ public class GrammarBasedModel extends Model {
     @Override
     public void updateModel(State s, GroundedAction ga, State sprime, double r, boolean sprimeIsTerminal) {
         StateHashTuple sh = hashingFactory.hashState(s);
-
         if (sprimeIsTerminal)
             this.terminalStates.add(hashingFactory.hashState(sprime));
 
@@ -184,10 +183,10 @@ public class GrammarBasedModel extends Model {
         gp.addLogic(GrammarRule.LOGIC_RULE_NOT);
         gp.addLogic(GrammarRule.LOGIC_RULE_OR);
 
-        ((ChunkGrammarParser)gp).addChunck("EMPTY(EAST(Agent))");
-        ((ChunkGrammarParser)gp).addChunck("EMPTY(WEST(Agent))");
-        ((ChunkGrammarParser)gp).addChunck("EMPTY(NORTH(Agent))");
-        ((ChunkGrammarParser)gp).addChunck("EMPTY(SOUTH(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("EMPTY(EAST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("EMPTY(WEST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("EMPTY(NORTH(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("EMPTY(SOUTH(Agent))");
 
         ExpressionParser ep = new ExpressionParser("Agent") {
 
@@ -250,7 +249,7 @@ public class GrammarBasedModel extends Model {
             gas.add(new GroundedAction(a, new String[]{SokobanDomain.CLASSAGENT}));
 
         // North
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 10000; i++) {
             GroundedAction ga = gas.get((int) (Math.random() * gas.size()));
             ObjectInstance agent = s.getObjectsOfTrueClass(GridWorldDomain.CLASSAGENT).get(0);
             State sp = ga.executeIn(s);
@@ -319,7 +318,7 @@ public class GrammarBasedModel extends Model {
             while (potentialExpressions == null || potentialExpressions.isEmpty()) {
                 // Generate new expressions from grammar
 
-                if (grammarLevel == 3 && subExpression == null)
+                if (subExpression == null && !(grammarParser instanceof ChunkGrammarParser) && grammarLevel == 3)
                     return;//throw new RuntimeException("Grammar level 3!");
                 if (subExpression == null)
                     if (grammarParser instanceof ChunkGrammarParser) {
@@ -428,8 +427,6 @@ public class GrammarBasedModel extends Model {
             this.type = type;
             this.objectName = objectName;
             this.attName = attName;
-            if (objectName.contains("rock"))
-                System.out.println(this);
         }
 
         @Override
