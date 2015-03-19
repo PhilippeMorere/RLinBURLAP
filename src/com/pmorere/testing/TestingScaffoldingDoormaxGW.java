@@ -12,7 +12,7 @@ import burlap.oomdp.singleagent.SADomain;
 import burlap.oomdp.singleagent.common.SinglePFTF;
 import burlap.oomdp.singleagent.common.UniformCostRF;
 import com.pmorere.modellearning.doormax.Doormax;
-import com.pmorere.modellearning.scaffolding.ModelLearner;
+import com.pmorere.modellearning.ModelLearner;
 import com.pmorere.modellearning.scaffolding.Scaffolding;
 import com.pmorere.modellearning.scaffolding.Tree;
 

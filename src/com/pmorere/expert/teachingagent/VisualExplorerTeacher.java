@@ -1,6 +1,5 @@
-package com.pmorere.teachingagent;
+package com.pmorere.expert.teachingagent;
 
-import burlap.behavior.singleagent.learning.LearningAgent;
 import burlap.behavior.singleagent.learning.modellearning.Model;
 import burlap.oomdp.core.Domain;
 import burlap.oomdp.core.State;

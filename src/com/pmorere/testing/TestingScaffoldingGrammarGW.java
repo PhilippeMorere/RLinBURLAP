@@ -18,7 +18,7 @@ import burlap.oomdp.visualizer.Visualizer;
 import com.pmorere.modellearning.grammarLearner.grammar.ExpressionParser;
 import com.pmorere.modellearning.grammarLearner.GrammarLearner;
 import com.pmorere.modellearning.grammarLearner.grammar.GrammarParser;
-import com.pmorere.modellearning.scaffolding.ModelLearner;
+import com.pmorere.modellearning.ModelLearner;
 import com.pmorere.modellearning.scaffolding.Scaffolding;
 import com.pmorere.modellearning.scaffolding.Tree;
 

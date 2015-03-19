@@ -20,7 +20,7 @@ import burlap.oomdp.core.*;
 import burlap.oomdp.singleagent.Action;
 import burlap.oomdp.singleagent.GroundedAction;
 import burlap.oomdp.singleagent.RewardFunction;
-import com.pmorere.modellearning.scaffolding.ModelLearner;
+import com.pmorere.modellearning.ModelLearner;
 
 import java.util.LinkedList;
 import java.util.List;

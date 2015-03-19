@@ -44,7 +44,7 @@ public class GrammarParser {
     }
 
     public void addLogic(GrammarRule logicRule) {
-        this.addLogic(logicRule);
+        this.logicRules.add(logicRule);
         ruleOutputCount.put(BOOLEAN, ruleOutputCount.get(BOOLEAN) + 1);
     }
 

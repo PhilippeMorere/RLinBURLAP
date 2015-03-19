@@ -19,10 +19,12 @@ import burlap.oomdp.singleagent.RewardFunction;
 import burlap.oomdp.singleagent.common.SinglePFTF;
 import burlap.oomdp.singleagent.common.UniformCostRF;
 import burlap.oomdp.visualizer.Visualizer;
-import com.pmorere.modellearning.grammarLearner.grammar.ExpressionParser;
 import com.pmorere.modellearning.grammarLearner.GrammarBasedModel;
 import com.pmorere.modellearning.grammarLearner.GrammarLearner;
+import com.pmorere.modellearning.grammarLearner.grammar.ChunkGrammarParser;
+import com.pmorere.modellearning.grammarLearner.grammar.ExpressionParser;
 import com.pmorere.modellearning.grammarLearner.grammar.GrammarParser;
+import com.pmorere.modellearning.grammarLearner.grammar.GrammarRule;
 import com.pmorere.sokoban.*;
 
 /**
@@ -46,16 +48,16 @@ public class TestingGrammarLearner {
     public static void main(String[] args) {
 
         TestingGrammarLearner example = new TestingGrammarLearner();
-        //example.testOnGridWorld();
-        example.testOnSokoban();
+        example.testOnGridWorld();
+        //example.testOnSokoban();
         String outputPath = "output/"; //directory to record results
 
         //we will call planning and learning algorithms here
         example.GLExample(outputPath);
 
         //run the visualizer
-        //example.visualizeGridWorld(outputPath);
-        example.visualizeSokoban(outputPath);
+        example.visualizeGridWorld(outputPath);
+        //example.visualizeSokoban(outputPath);
 
     }
 
@@ -85,16 +87,21 @@ public class TestingGrammarLearner {
                 domain.getObjectClass(GridWorldDomain.CLASSAGENT).attributeList);
 
         // Set up the grammar
-        gp = new GrammarParser();
+        gp = new ChunkGrammarParser();
         gp.addRule("Agent", "place");
         gp.addRule("EAST", "place", "place");
         gp.addRule("WEST", "place", "place");
         gp.addRule("NORTH", "place", "place");
         gp.addRule("SOUTH", "place", "place");
-        gp.addRule("EMPTY", "place", GrammarParser.BOOLEAN);
-        gp.addRule("AND", new String[]{GrammarParser.BOOLEAN, GrammarParser.BOOLEAN}, GrammarParser.BOOLEAN);
-        gp.addRule("OR", new String[]{GrammarParser.BOOLEAN, GrammarParser.BOOLEAN}, GrammarParser.BOOLEAN);
-        gp.addRule("NOT", GrammarParser.BOOLEAN, GrammarParser.BOOLEAN);
+        gp.addRule("WALL", "place", GrammarParser.BOOLEAN);
+        gp.addLogic(GrammarRule.LOGIC_RULE_AND);
+        gp.addLogic(GrammarRule.LOGIC_RULE_NOT);
+        gp.addLogic(GrammarRule.LOGIC_RULE_OR);
+
+        ((ChunkGrammarParser)gp).addChunck("WALL(EAST(Agent))");
+        ((ChunkGrammarParser)gp).addChunck("WALL(WEST(Agent))");
+        ((ChunkGrammarParser)gp).addChunck("WALL(NORTH(Agent))");
+        ((ChunkGrammarParser)gp).addChunck("WALL(SOUTH(Agent))");
 
         ep = new ExpressionParser("Agent") {
 
@@ -102,17 +109,11 @@ public class TestingGrammarLearner {
 
             @Override
             public Object evaluateOperator(String symbol, Object[] args) {
-                if (symbol.equals("AND"))
-                    return (Boolean) args[0] && (Boolean) args[1];
-                else if (symbol.equals("OR"))
-                    return (Boolean) args[0] || (Boolean) args[1];
-                else if (symbol.equals("NOT"))
-                    return !(Boolean) args[0];
-                else if (symbol.equals("EMPTY")) {
+                if (symbol.equals("WALL")) {
                     Pos pos = getXY((String) args[0]);
                     if (pos.x >= gwdg.getWidth() || pos.x < 0 || pos.y >= gwdg.getHeight() || pos.y < 0)
-                        return false;
-                    return map[pos.x][pos.y] == 0;
+                        return true;
+                    return map[pos.x][pos.y] != 0;
                 } else if (symbol.equals("EAST")) {
                     Pos pos = getXY((String) args[0]);
                     return (pos.x + 1) + "," + pos.y;
@@ -126,7 +127,7 @@ public class TestingGrammarLearner {
                     Pos pos = getXY((String) args[0]);
                     return pos.x + "," + (pos.y + 1);
                 }
-                throw new RuntimeException("Unsupported symbol " + symbol);
+                return null;
             }
 
             private Pos getXY(String arg) {
@@ -189,7 +190,7 @@ public class TestingGrammarLearner {
 
 
         // Set up the grammar
-        gp = new GrammarParser();
+        gp = new ChunkGrammarParser();
         gp.addRule("Agent", "place");
         gp.addRule("EAST", "place", "place");
         gp.addRule("WEST", "place", "place");
@@ -198,9 +199,29 @@ public class TestingGrammarLearner {
         gp.addRule("WALL", "place", GrammarParser.BOOLEAN);
         gp.addRule("GOAL", "place", GrammarParser.BOOLEAN);
         gp.addRule("ROCK", "place", GrammarParser.BOOLEAN);
-        gp.addRule("AND", new String[]{GrammarParser.BOOLEAN, GrammarParser.BOOLEAN}, GrammarParser.BOOLEAN);
-        gp.addRule("OR", new String[]{GrammarParser.BOOLEAN, GrammarParser.BOOLEAN}, GrammarParser.BOOLEAN);
-        gp.addRule("NOT", GrammarParser.BOOLEAN, GrammarParser.BOOLEAN);
+        gp.addLogic(GrammarRule.LOGIC_RULE_AND);
+        gp.addLogic(GrammarRule.LOGIC_RULE_NOT);
+        gp.addLogic(GrammarRule.LOGIC_RULE_OR);
+
+        ((ChunkGrammarParser)gp).addChunck("WALL(EAST(Agent))");
+        ((ChunkGrammarParser)gp).addChunck("WALL(WEST(Agent))");
+        ((ChunkGrammarParser)gp).addChunck("WALL(NORTH(Agent))");
+        ((ChunkGrammarParser)gp).addChunck("WALL(SOUTH(Agent))");
+
+        ((ChunkGrammarParser)gp).addChunck("ROCK(EAST(Agent))");
+        ((ChunkGrammarParser)gp).addChunck("ROCK(WEST(Agent))");
+        ((ChunkGrammarParser)gp).addChunck("ROCK(NORTH(Agent))");
+        ((ChunkGrammarParser)gp).addChunck("ROCK(SOUTH(Agent))");
+
+        ((ChunkGrammarParser)gp).addChunck("WALL(EAST(EAST(Agent)))");
+        ((ChunkGrammarParser)gp).addChunck("WALL(WEST(WEST(Agent)))");
+        ((ChunkGrammarParser)gp).addChunck("WALL(NORTH(NORTH(Agent)))");
+        ((ChunkGrammarParser)gp).addChunck("WALL(SOUTH(SOUTH(Agent)))");
+
+        ((ChunkGrammarParser)gp).addChunck("GOAL(EAST(EAST(Agent)))");
+        ((ChunkGrammarParser)gp).addChunck("GOAL(WEST(WEST(Agent)))");
+        ((ChunkGrammarParser)gp).addChunck("GOAL(NORTH(NORTH(Agent)))");
+        ((ChunkGrammarParser)gp).addChunck("GOAL(SOUTH(SOUTH(Agent)))");
 
         ep = new ExpressionParser("Agent") {
 
@@ -208,13 +229,7 @@ public class TestingGrammarLearner {
 
             @Override
             public Object evaluateOperator(String symbol, Object[] args) {
-                if (symbol.equals("AND"))
-                    return (Boolean) args[0] && (Boolean) args[1];
-                else if (symbol.equals("OR"))
-                    return (Boolean) args[0] || (Boolean) args[1];
-                else if (symbol.equals("NOT"))
-                    return !(Boolean) args[0];
-                else if (symbol.equals("WALL")) {
+                if (symbol.equals("WALL")) {
                     Pos pos = getXY((String) args[0]);
                     if (pos.x >= gwdg.getWidth() || pos.x < 0 || pos.y >= gwdg.getHeight() || pos.y < 0)
                         return true;
@@ -242,7 +257,7 @@ public class TestingGrammarLearner {
                     Pos pos = getXY((String) args[0]);
                     return pos.x + "," + (pos.y + 1);
                 }
-                throw new RuntimeException("Unsupported symbol " + symbol);
+                return null;
             }
 
             private Pos getXY(String arg) {

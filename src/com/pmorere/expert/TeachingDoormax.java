@@ -18,7 +18,7 @@ import burlap.oomdp.singleagent.RewardFunction;
 import burlap.oomdp.visualizer.Visualizer;
 import com.pmorere.modellearning.doormax.Doormax;
 import com.pmorere.sokoban.*;
-import com.pmorere.teachingagent.VisualExplorerTeacher;
+import com.pmorere.expert.teachingagent.VisualExplorerTeacher;
 
 import java.util.ArrayList;
 import java.util.List;

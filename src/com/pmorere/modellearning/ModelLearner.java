@@ -1,4 +1,4 @@
-package com.pmorere.modellearning.scaffolding;
+package com.pmorere.modellearning;
 
 import burlap.behavior.singleagent.learning.LearningAgent;
 import burlap.behavior.singleagent.learning.modellearning.Model;

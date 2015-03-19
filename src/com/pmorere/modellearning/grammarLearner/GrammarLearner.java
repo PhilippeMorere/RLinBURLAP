@@ -22,7 +22,7 @@ import burlap.oomdp.singleagent.GroundedAction;
 import burlap.oomdp.singleagent.RewardFunction;
 import com.pmorere.modellearning.grammarLearner.grammar.ExpressionParser;
 import com.pmorere.modellearning.grammarLearner.grammar.GrammarParser;
-import com.pmorere.modellearning.scaffolding.ModelLearner;
+import com.pmorere.modellearning.ModelLearner;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -61,7 +61,7 @@ public class GrammarLearner extends OOMDPPlanner implements LearningAgent, QComp
                           StateHashFactory hashingFactory, GrammarParser grammarParser,
                           ExpressionParser expressionParser, double rmax) {
         this.plannerInit(domain, rf, tf, gamma, hashingFactory);
-        this.model = new ScaffoldingGrammarBasedModel(domain, hashingFactory, grammarParser, expressionParser);
+        this.model = new GrammarBasedModel(domain, hashingFactory, grammarParser, expressionParser);
 
         ModeledDomainGenerator mdg = new ModeledDomainGenerator(domain, this.model, true);
         this.modeledDomain = mdg.generateDomain();

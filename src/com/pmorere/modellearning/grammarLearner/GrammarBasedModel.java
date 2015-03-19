@@ -9,8 +9,10 @@ import burlap.oomdp.core.*;
 import burlap.oomdp.singleagent.Action;
 import burlap.oomdp.singleagent.GroundedAction;
 import burlap.oomdp.singleagent.RewardFunction;
+import com.pmorere.modellearning.grammarLearner.grammar.ChunkGrammarParser;
 import com.pmorere.modellearning.grammarLearner.grammar.ExpressionParser;
 import com.pmorere.modellearning.grammarLearner.grammar.GrammarParser;
+import com.pmorere.modellearning.grammarLearner.grammar.GrammarRule;
 import com.pmorere.sokoban.SokobanDomain;
 
 import java.util.*;
@@ -171,16 +173,21 @@ public class GrammarBasedModel extends Model {
                 d.getObjectClass(GridWorldDomain.CLASSAGENT).attributeList);
 
         // Set up the grammar
-        GrammarParser gp = new GrammarParser();
+        GrammarParser gp = new ChunkGrammarParser();
         gp.addRule("Agent", "place");
         gp.addRule("EAST", "place", "place");
         gp.addRule("WEST", "place", "place");
         gp.addRule("NORTH", "place", "place");
         gp.addRule("SOUTH", "place", "place");
         gp.addRule("EMPTY", "place", GrammarParser.BOOLEAN);
-        //gp.addRule("AND", new String[]{GrammarParser.BOOLEAN, GrammarParser.BOOLEAN}, GrammarParser.BOOLEAN);
-        //gp.addRule("OR", new String[]{GrammarParser.BOOLEAN, GrammarParser.BOOLEAN}, GrammarParser.BOOLEAN);
-        gp.addRule("NOT", GrammarParser.BOOLEAN, GrammarParser.BOOLEAN);
+        gp.addLogic(GrammarRule.LOGIC_RULE_AND);
+        gp.addLogic(GrammarRule.LOGIC_RULE_NOT);
+        gp.addLogic(GrammarRule.LOGIC_RULE_OR);
+
+        ((ChunkGrammarParser)gp).addChunck("EMPTY(EAST(Agent))");
+        ((ChunkGrammarParser)gp).addChunck("EMPTY(WEST(Agent))");
+        ((ChunkGrammarParser)gp).addChunck("EMPTY(NORTH(Agent))");
+        ((ChunkGrammarParser)gp).addChunck("EMPTY(SOUTH(Agent))");
 
         ExpressionParser ep = new ExpressionParser("Agent") {
 
@@ -188,13 +195,7 @@ public class GrammarBasedModel extends Model {
 
             @Override
             public Object evaluateOperator(String symbol, Object[] args) {
-                if (symbol.equals("AND"))
-                    return (Boolean) args[0] && (Boolean) args[1];
-                else if (symbol.equals("OR"))
-                    return (Boolean) args[0] || (Boolean) args[1];
-                else if (symbol.equals("NOT"))
-                    return !(Boolean) args[0];
-                else if (symbol.equals("EMPTY")) {
+                if (symbol.equals("EMPTY")) {
                     Pos pos = getXY((String) args[0]);
                     if (pos.x >= gwd.getWidth() || pos.x < 0 || pos.y >= gwd.getHeight() || pos.y < 0)
                         return false;
@@ -212,7 +213,7 @@ public class GrammarBasedModel extends Model {
                     Pos pos = getXY((String) args[0]);
                     return pos.x + "," + (pos.y + 1);
                 }
-                throw new RuntimeException("Unsupported symbol " + symbol);
+                return null;
             }
 
             private Pos getXY(String arg) {
@@ -249,14 +250,16 @@ public class GrammarBasedModel extends Model {
             gas.add(new GroundedAction(a, new String[]{SokobanDomain.CLASSAGENT}));
 
         // North
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 1000; i++) {
             GroundedAction ga = gas.get((int) (Math.random() * gas.size()));
             ObjectInstance agent = s.getObjectsOfTrueClass(GridWorldDomain.CLASSAGENT).get(0);
             State sp = ga.executeIn(s);
             model.updateModel(s, ga, sp, -0.1, false);
-            model.printRules();
+            //model.printRules();
+            //System.out.println();
             s = sp;
         }
+        model.printRules();
     }
 
 
@@ -319,8 +322,11 @@ public class GrammarBasedModel extends Model {
                 if (grammarLevel == 3 && subExpression == null)
                     return;//throw new RuntimeException("Grammar level 3!");
                 if (subExpression == null)
-                    potentialExpressions = grammarParser.generateAllExpsFromGrammar(grammarLevel++);
-                    //potentialExpressions = grammarParser.generateNExpsFromGrammar(100);
+                    if (grammarParser instanceof ChunkGrammarParser) {
+                        ((ChunkGrammarParser) grammarParser).setGrammarLevel(grammarLevel++);
+                        potentialExpressions = grammarParser.generateNExpsFromGrammar(10);
+                    } else
+                        potentialExpressions = grammarParser.generateAllExpsFromGrammar(grammarLevel++);
                 else
                     potentialExpressions = grammarParser.generateAllExpsFromSubExpression(subExpression);
 
