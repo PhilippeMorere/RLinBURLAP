@@ -135,7 +135,7 @@ public class GrammarBasedModel extends Model {
         for (Map.Entry<ActionEffect, ExpressionsForEffect> entry : allExpressions.entrySet())
             if (entry.getKey().ga.equals(ga)) {
                 // Remove the potential grammars that didn't predict it
-                entry.getValue().filterOutWrongExpressions(sh, activeEffects.contains(entry.getKey().ef));
+                entry.getValue().filterOutWrongExpressions(sh, entry.getValue().stateMemory.contains(sh));
 
                 // Check if the current expression hasn't been ruled out
                 entry.getValue().checkCurrentExpression();
@@ -205,10 +205,10 @@ public class GrammarBasedModel extends Model {
                     return (pos.x - 1) + "," + pos.y;
                 } else if (symbol.equals("SOUTH")) {
                     Pos pos = getXY((String) args[0]);
-                    return pos.x + "," + (pos.y-1);
+                    return pos.x + "," + (pos.y - 1);
                 } else if (symbol.equals("NORTH")) {
                     Pos pos = getXY((String) args[0]);
-                    return pos.x + "," + (pos.y+1);
+                    return pos.x + "," + (pos.y + 1);
                 }
                 throw new RuntimeException("Unsupported symbol " + symbol);
             }
@@ -262,6 +262,12 @@ public class GrammarBasedModel extends Model {
         GroundedAction ga;
         Effect ef;
 
+        public ActionEffect(GroundedAction ga, Effect ef) {
+            this.ga = ga;
+            this.ef = ef;
+
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -281,12 +287,6 @@ public class GrammarBasedModel extends Model {
             result = 31 * result + ef.hashCode();
             return result;
         }
-
-        public ActionEffect(GroundedAction ga, Effect ef) {
-            this.ga = ga;
-            this.ef = ef;
-
-        }
     }
 
     protected class ExpressionsForEffect {
@@ -301,23 +301,33 @@ public class GrammarBasedModel extends Model {
 
         protected GroundedAction ga;
 
+        protected int grammarLevel = 0;
+
         public ExpressionsForEffect(Effect effect, GroundedAction ga) {
             this.effect = effect;
             this.ga = ga;
             this.stateMemory = new HashSet<StateHashTuple>();
-            this.setNewCurrentExpression();
+            this.setNewCurrentExpression(null);
         }
 
-        private void setNewCurrentExpression() {
+        protected void setNewCurrentExpression(String subExpression) {
             while (potentialExpressions == null || potentialExpressions.isEmpty()) {
                 // Generate new expressions from grammar
-                potentialExpressions = grammarParser.generateNExpsFromGrammar(100);
+
+                if (grammarLevel == 3 && subExpression == null)
+                    return;//throw new RuntimeException("Grammar level 3!");
+                if (subExpression == null)
+                    potentialExpressions = grammarParser.generateAllExpsFromGrammar(grammarLevel++);
+                    //potentialExpressions = grammarParser.generateNExpsFromGrammar(100);
+                else
+                    potentialExpressions = grammarParser.generateAllExpsFromSubExpression(subExpression);
+
 
                 // Go through the state memory of similar action (different effect or not)
                 for (Map.Entry<ActionEffect, ExpressionsForEffect> entry1 : allExpressions.entrySet())
                     if (entry1.getKey().ga.equals(ga))
-                        for (StateHashTuple entry2 : entry1.getValue().stateMemory)
-                            filterOutWrongExpressions(entry2, entry1.getKey().ef.equals(effect));
+                        for (StateHashTuple memorizedState : entry1.getValue().stateMemory)
+                            filterOutWrongExpressions(memorizedState, this.stateMemory.contains(memorizedState));
             }
             currentExpression = potentialExpressions.get(0);
         }
@@ -330,7 +340,7 @@ public class GrammarBasedModel extends Model {
         protected void checkCurrentExpression() {
             // If the current expression is not in the potential ones, find a new current expression
             if (!potentialExpressions.contains(currentExpression))
-                setNewCurrentExpression();
+                setNewCurrentExpression(null);
         }
 
         protected void addStateToMemory(StateHashTuple sh) {
@@ -410,6 +420,8 @@ public class GrammarBasedModel extends Model {
             this.type = type;
             this.objectName = objectName;
             this.attName = attName;
+            if (objectName.contains("rock"))
+                System.out.println(this);
         }
 
         @Override

@@ -15,6 +15,21 @@ public abstract class ExpressionParser {
 
     public abstract Object evaluateOperator(String symbol, Object[] args);
 
+    public Object evaluateOperatorHelper(String symbol, Object[] args) {
+        if (symbol.equals("AND"))
+            return (Boolean) args[0] && (Boolean) args[1];
+        else if (symbol.equals("OR"))
+            return (Boolean) args[0] || (Boolean) args[1];
+        else if (symbol.equals("NOT"))
+            return !(Boolean) args[0];
+        else {
+            Object res = evaluateOperator(symbol, args);
+            if (res == null)
+                throw new RuntimeException("Function evaluateOperator should implement computation for symbol " + symbol);
+            return res;
+        }
+    }
+
     public boolean evaluate(String exp) {
         return (Boolean) evaluateHelper(exp);
     }
@@ -36,12 +51,11 @@ public abstract class ExpressionParser {
             else if (subExp.charAt(i) == ')')
                 parenthesisCount--;
             else if (subExp.charAt(i) == ',' && parenthesisCount == 0)
-                return evaluateOperator(symbol, new Object[]{
+                return evaluateOperatorHelper(symbol, new Object[]{
                         evaluateHelper(subExp.substring(0, i)), evaluateHelper(subExp.substring(i + 1, subExp.length()))});
-
         }
 
-        return evaluateOperator(symbol, new Object[]{evaluateHelper(subExp)});
+        return evaluateOperatorHelper(symbol, new Object[]{evaluateHelper(subExp)});
     }
 
     public static void main(String[] args) {
@@ -49,13 +63,7 @@ public abstract class ExpressionParser {
         ExpressionParser expp = new ExpressionParser("Agent") {
             @Override
             public Object evaluateOperator(String symbol, Object[] args) {
-                if (symbol.equals("AND"))
-                    return (Boolean) args[0] && (Boolean) args[1];
-                else if (symbol.equals("OR"))
-                    return (Boolean) args[0] || (Boolean) args[1];
-                else if (symbol.equals("NOT"))
-                    return !(Boolean) args[0];
-                else if (symbol.equals("EMPTY"))
+                if (symbol.equals("EMPTY"))
                     return true;
                 else if (symbol.equals("EAST"))
                     return "LOC";

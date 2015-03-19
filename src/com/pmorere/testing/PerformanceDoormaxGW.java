@@ -201,11 +201,11 @@ public class PerformanceDoormaxGW extends TestingScaffoldingDoormaxGW {
         StateGenerator sg = new ConstantStateGenerator(this.initialState);
 
         LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter((SADomain) this.domain,
-                rf, sg, 200, 40, doormaxFactory, grammarLearnerFactory);
+                rf, sg, 200, 50, doormaxFactory, grammarLearnerFactory);
 
         exp.setUpPlottingConfiguration(500, 250, 2, 1000,
                 TrialMode.MOSTRECENTANDAVERAGE,
-                PerformanceMetric.CUMULATIVESTEPSPEREPISODE,
+                PerformanceMetric.STEPSPEREPISODE,
                 PerformanceMetric.AVERAGEEPISODEREWARD);
 
         exp.startExperiment();

@@ -68,8 +68,36 @@ public class ScaffoldingGrammarBasedModel extends GrammarBasedModel implements S
             }
         }
 
-        // The combination of the submodels was wrong, update this model
-        if (!rightTransFound)
+        // The prediction was wrong, update the model
+        if (!rightTransFound) {
+            Model subModel = null;
+            // If it was predicted by one of the sub-models
+            List<Effect> effects = new Effects(s, sprime).effects;
+            for(Effect effect : effects) {
+                ActionEffect actionEffect = new ActionEffect(ga, effect);
+                if (!this.allExpressions.containsKey(actionEffect))
+                    for (Model sub : subModels)
+                        if (((GrammarBasedModel)sub).allExpressions.containsKey(actionEffect)){
+                            subModel = sub;
+                            break;
+                        }
+            }
+
+            // Update current model
             super.updateModel(s, ga, sprime, r, sprimeIsTerminal);
+
+            // Construct expression from sub-model expression and copy the sub-model memory
+            if (subModel != null)
+                for (Effect effect : effects)
+                    initFromSubModel(subModel, new ActionEffect(ga, effect));
+        }
+    }
+
+    private void initFromSubModel(Model subModel, ActionEffect actionEffect) {
+        System.out.println("#INITFROMSUBMODEL");
+        ExpressionsForEffect subEff = ((GrammarBasedModel) subModel).allExpressions.get(actionEffect);
+        ExpressionsForEffect eff = this.allExpressions.get(actionEffect);
+        eff.stateMemory.addAll(subEff.stateMemory);
+        eff.setNewCurrentExpression(subEff.currentExpression);
     }
 }

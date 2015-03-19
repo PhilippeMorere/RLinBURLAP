@@ -46,16 +46,16 @@ public class TestingGrammarLearner {
     public static void main(String[] args) {
 
         TestingGrammarLearner example = new TestingGrammarLearner();
-        example.testOnGridWorld();
-        //example.testOnSokoban();
+        //example.testOnGridWorld();
+        example.testOnSokoban();
         String outputPath = "output/"; //directory to record results
 
         //we will call planning and learning algorithms here
         example.GLExample(outputPath);
 
         //run the visualizer
-        example.visualizeGridWorld(outputPath);
-        //example.visualizeSokoban(outputPath);
+        //example.visualizeGridWorld(outputPath);
+        example.visualizeSokoban(outputPath);
 
     }
 
@@ -121,10 +121,10 @@ public class TestingGrammarLearner {
                     return (pos.x - 1) + "," + pos.y;
                 } else if (symbol.equals("SOUTH")) {
                     Pos pos = getXY((String) args[0]);
-                    return pos.x + "," + (pos.y-1);
+                    return pos.x + "," + (pos.y - 1);
                 } else if (symbol.equals("NORTH")) {
                     Pos pos = getXY((String) args[0]);
-                    return pos.x + "," + (pos.y+1);
+                    return pos.x + "," + (pos.y + 1);
                 }
                 throw new RuntimeException("Unsupported symbol " + symbol);
             }
@@ -189,6 +189,85 @@ public class TestingGrammarLearner {
 
 
         // Set up the grammar
+        gp = new GrammarParser();
+        gp.addRule("Agent", "place");
+        gp.addRule("EAST", "place", "place");
+        gp.addRule("WEST", "place", "place");
+        gp.addRule("NORTH", "place", "place");
+        gp.addRule("SOUTH", "place", "place");
+        gp.addRule("WALL", "place", GrammarParser.BOOLEAN);
+        gp.addRule("GOAL", "place", GrammarParser.BOOLEAN);
+        gp.addRule("ROCK", "place", GrammarParser.BOOLEAN);
+        gp.addRule("AND", new String[]{GrammarParser.BOOLEAN, GrammarParser.BOOLEAN}, GrammarParser.BOOLEAN);
+        gp.addRule("OR", new String[]{GrammarParser.BOOLEAN, GrammarParser.BOOLEAN}, GrammarParser.BOOLEAN);
+        gp.addRule("NOT", GrammarParser.BOOLEAN, GrammarParser.BOOLEAN);
+
+        ep = new ExpressionParser("Agent") {
+
+            int[][] map = gwdg.getMap();
+
+            @Override
+            public Object evaluateOperator(String symbol, Object[] args) {
+                if (symbol.equals("AND"))
+                    return (Boolean) args[0] && (Boolean) args[1];
+                else if (symbol.equals("OR"))
+                    return (Boolean) args[0] || (Boolean) args[1];
+                else if (symbol.equals("NOT"))
+                    return !(Boolean) args[0];
+                else if (symbol.equals("WALL")) {
+                    Pos pos = getXY((String) args[0]);
+                    if (pos.x >= gwdg.getWidth() || pos.x < 0 || pos.y >= gwdg.getHeight() || pos.y < 0)
+                        return true;
+                    return map[pos.x][pos.y] != 0;
+                } else if (symbol.equals("GOAL")) {
+                    Pos pos = getXY((String) args[0]);
+                    ObjectInstance goal = sh.s.getFirstObjectOfClass(SokobanDomain.CLASSLOCATION);
+                    return goal.getDiscValForAttribute(SokobanDomain.ATTX) == pos.x &&
+                            goal.getDiscValForAttribute(SokobanDomain.ATTY) == pos.y;
+                } else if (symbol.equals("ROCK")) {
+                    Pos pos = getXY((String) args[0]);
+                    ObjectInstance rock = sh.s.getFirstObjectOfClass(SokobanDomain.CLASSROCK);
+                    return rock.getDiscValForAttribute(SokobanDomain.ATTX) == pos.x &&
+                            rock.getDiscValForAttribute(SokobanDomain.ATTY) == pos.y;
+                } else if (symbol.equals("EAST")) {
+                    Pos pos = getXY((String) args[0]);
+                    return (pos.x + 1) + "," + pos.y;
+                } else if (symbol.equals("WEST")) {
+                    Pos pos = getXY((String) args[0]);
+                    return (pos.x - 1) + "," + pos.y;
+                } else if (symbol.equals("SOUTH")) {
+                    Pos pos = getXY((String) args[0]);
+                    return pos.x + "," + (pos.y - 1);
+                } else if (symbol.equals("NORTH")) {
+                    Pos pos = getXY((String) args[0]);
+                    return pos.x + "," + (pos.y + 1);
+                }
+                throw new RuntimeException("Unsupported symbol " + symbol);
+            }
+
+            private Pos getXY(String arg) {
+                int x, y;
+                if (arg.equals("Agent")) {
+                    ObjectInstance agent = sh.s.getObjectsOfTrueClass(GridWorldDomain.CLASSAGENT).get(0);
+                    x = agent.getDiscValForAttribute(GridWorldDomain.ATTX);
+                    y = agent.getDiscValForAttribute(GridWorldDomain.ATTY);
+                } else {
+                    String[] coord = arg.split(",");
+                    x = Integer.valueOf(coord[0]);
+                    y = Integer.valueOf(coord[1]);
+                }
+                return new Pos(x, y);
+            }
+
+            class Pos {
+                public int x, y;
+
+                public Pos(int x, int y) {
+                    this.x = x;
+                    this.y = y;
+                }
+            }
+        };
     }
 
     public void GLExample(String outputPath) {
@@ -200,7 +279,7 @@ public class TestingGrammarLearner {
 
         //run learning for 1000 episodes
         int maxTimeSteps = 200;
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 10; i++) {
             EpisodeAnalysis ea = agent.runLearningEpisodeFrom(initialState, maxTimeSteps);
             //if(ea.numTimeSteps() < maxTimeSteps)
             ea.writeToFile(String.format("%se%03d", outputPath, i), sp);
