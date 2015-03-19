@@ -201,13 +201,7 @@ public class GrammarParser {
         ExpressionParser expp = new ExpressionParser("Agent") {
             @Override
             public Object evaluateOperator(String symbol, Object[] args) {
-                if (symbol.equals("AND"))
-                    return (Boolean) args[0] && (Boolean) args[1];
-                else if (symbol.equals("OR"))
-                    return (Boolean) args[0] || (Boolean) args[1];
-                else if (symbol.equals("NOT"))
-                    return !(Boolean) args[0];
-                else if (symbol.equals("EMPTY"))
+                if (symbol.equals("EMPTY"))
                     return true;
                 else if (symbol.equals("EAST"))
                     return "LOC";
