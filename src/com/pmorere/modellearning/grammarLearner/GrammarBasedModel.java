@@ -1,4 +1,4 @@
-package com.pmorere.modellearning.grammar;
+package com.pmorere.modellearning.grammarLearner;
 
 import burlap.behavior.singleagent.learning.modellearning.Model;
 import burlap.behavior.statehashing.DiscreteStateHashFactory;
@@ -9,6 +9,8 @@ import burlap.oomdp.core.*;
 import burlap.oomdp.singleagent.Action;
 import burlap.oomdp.singleagent.GroundedAction;
 import burlap.oomdp.singleagent.RewardFunction;
+import com.pmorere.modellearning.grammarLearner.grammar.ExpressionParser;
+import com.pmorere.modellearning.grammarLearner.grammar.GrammarParser;
 import com.pmorere.sokoban.SokobanDomain;
 
 import java.util.*;

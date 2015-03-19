@@ -1,4 +1,4 @@
-package com.pmorere.modellearning.grammar;
+package com.pmorere.modellearning.grammarLearner;
 
 import burlap.behavior.singleagent.EpisodeAnalysis;
 import burlap.behavior.singleagent.Policy;
@@ -20,6 +20,8 @@ import burlap.oomdp.core.TerminalFunction;
 import burlap.oomdp.singleagent.Action;
 import burlap.oomdp.singleagent.GroundedAction;
 import burlap.oomdp.singleagent.RewardFunction;
+import com.pmorere.modellearning.grammarLearner.grammar.ExpressionParser;
+import com.pmorere.modellearning.grammarLearner.grammar.GrammarParser;
 import com.pmorere.modellearning.scaffolding.ModelLearner;
 
 import java.util.LinkedList;

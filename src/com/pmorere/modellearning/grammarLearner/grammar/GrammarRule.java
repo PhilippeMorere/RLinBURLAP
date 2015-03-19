@@ -1,4 +1,4 @@
-package com.pmorere.modellearning.grammar;
+package com.pmorere.modellearning.grammarLearner.grammar;
 
 /**
  * Created by philippe on 19/03/15.

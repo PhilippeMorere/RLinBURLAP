@@ -1,4 +1,4 @@
-package com.pmorere.modellearning.grammar;
+package com.pmorere.modellearning.grammarLearner.grammar;
 
 import burlap.behavior.statehashing.StateHashTuple;
 

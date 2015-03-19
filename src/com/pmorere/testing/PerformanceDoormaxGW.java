@@ -16,9 +16,9 @@ import burlap.oomdp.core.ObjectInstance;
 import burlap.oomdp.singleagent.RewardFunction;
 import burlap.oomdp.singleagent.SADomain;
 import com.pmorere.modellearning.doormax.Doormax;
-import com.pmorere.modellearning.grammar.ExpressionParser;
-import com.pmorere.modellearning.grammar.GrammarLearner;
-import com.pmorere.modellearning.grammar.GrammarParser;
+import com.pmorere.modellearning.grammarLearner.grammar.ExpressionParser;
+import com.pmorere.modellearning.grammarLearner.GrammarLearner;
+import com.pmorere.modellearning.grammarLearner.grammar.GrammarParser;
 import com.pmorere.modellearning.scaffolding.Scaffolding;
 import com.pmorere.modellearning.scaffolding.Tree;
 
