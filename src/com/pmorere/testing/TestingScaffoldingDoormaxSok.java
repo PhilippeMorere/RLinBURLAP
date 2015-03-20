@@ -3,15 +3,23 @@ package com.pmorere.testing;
 import burlap.behavior.singleagent.planning.StateConditionTest;
 import burlap.behavior.singleagent.planning.deterministic.TFGoalCondition;
 import burlap.behavior.statehashing.DiscreteStateHashFactory;
+import burlap.domain.singleagent.gridworld.GridWorldDomain;
 import burlap.oomdp.auxiliary.StateParser;
 import burlap.oomdp.core.*;
 import burlap.oomdp.singleagent.RewardFunction;
 import burlap.oomdp.singleagent.SADomain;
 import burlap.oomdp.singleagent.common.UniformCostRF;
 import com.pmorere.modellearning.doormax.Doormax;
+import com.pmorere.modellearning.grammarLearner.grammar.ChunkGrammarParser;
+import com.pmorere.modellearning.grammarLearner.grammar.ExpressionParser;
+import com.pmorere.modellearning.grammarLearner.grammar.GrammarParser;
+import com.pmorere.modellearning.grammarLearner.grammar.GrammarRule;
 import com.pmorere.modellearning.scaffolding.Scaffolding;
 import com.pmorere.modellearning.scaffolding.Tree;
-import com.pmorere.sokoban.*;
+import com.pmorere.sokoban.SokobanDomain;
+import com.pmorere.sokoban.SokobanRF;
+import com.pmorere.sokoban.SokobanStateParser;
+import com.pmorere.sokoban.SokobanTF;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +37,8 @@ public class TestingScaffoldingDoormaxSok {
     State initialState;
     DiscreteStateHashFactory hashingFactory;
     List<PropositionalFunction> pfs;
+    GrammarParser gp;
+    ExpressionParser ep;
 
     public TestingScaffoldingDoormaxSok() {
     }
@@ -81,6 +91,102 @@ public class TestingScaffoldingDoormaxSok {
         pfs = new ArrayList<PropositionalFunction>();
         pfs.addAll(domain.getPropFunctions());
         pfs.remove(domain.getPropFunction(SokobanDomain.PFATLOCATION));
+
+        // Set up the grammar
+        gp = new ChunkGrammarParser();
+        gp.addRule("Agent", "place");
+        gp.addRule("EAST", "place", "place");
+        gp.addRule("WEST", "place", "place");
+        gp.addRule("NORTH", "place", "place");
+        gp.addRule("SOUTH", "place", "place");
+        gp.addRule("WALL", "place", GrammarParser.BOOLEAN);
+        gp.addRule("GOAL", "place", GrammarParser.BOOLEAN);
+        gp.addRule("ROCK", "place", GrammarParser.BOOLEAN);
+        gp.addLogic(GrammarRule.LOGIC_RULE_AND);
+        gp.addLogic(GrammarRule.LOGIC_RULE_NOT);
+        gp.addLogic(GrammarRule.LOGIC_RULE_OR);
+
+        ((ChunkGrammarParser) gp).addChunck("WALL(EAST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(WEST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(NORTH(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(SOUTH(Agent))");
+
+        ((ChunkGrammarParser) gp).addChunck("ROCK(EAST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("ROCK(WEST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("ROCK(NORTH(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("ROCK(SOUTH(Agent))");
+
+        ((ChunkGrammarParser) gp).addChunck("WALL(EAST(EAST(Agent)))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(WEST(WEST(Agent)))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(NORTH(NORTH(Agent)))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(SOUTH(SOUTH(Agent)))");
+
+        ((ChunkGrammarParser) gp).addChunck("GOAL(EAST(EAST(Agent)))");
+        ((ChunkGrammarParser) gp).addChunck("GOAL(WEST(WEST(Agent)))");
+        ((ChunkGrammarParser) gp).addChunck("GOAL(NORTH(NORTH(Agent)))");
+        ((ChunkGrammarParser) gp).addChunck("GOAL(SOUTH(SOUTH(Agent)))");
+
+        ep = new ExpressionParser("Agent") {
+
+            int[][] map = gwdg.getMap();
+
+            @Override
+            public Object evaluateOperator(String symbol, Object[] args) {
+                if (symbol.equals("WALL")) {
+                    Pos pos = getXY((String) args[0]);
+                    if (pos.x >= gwdg.getWidth() || pos.x < 0 || pos.y >= gwdg.getHeight() || pos.y < 0)
+                        return true;
+                    return map[pos.x][pos.y] != 0;
+                } else if (symbol.equals("GOAL")) {
+                    Pos pos = getXY((String) args[0]);
+                    ObjectInstance goal = sh.s.getFirstObjectOfClass(SokobanDomain.CLASSLOCATION);
+                    return goal.getDiscValForAttribute(SokobanDomain.ATTX) == pos.x &&
+                            goal.getDiscValForAttribute(SokobanDomain.ATTY) == pos.y;
+                } else if (symbol.equals("ROCK")) {
+                    Pos pos = getXY((String) args[0]);
+                    ObjectInstance rock = sh.s.getFirstObjectOfClass(SokobanDomain.CLASSROCK);
+                    return rock.getDiscValForAttribute(SokobanDomain.ATTX) == pos.x &&
+                            rock.getDiscValForAttribute(SokobanDomain.ATTY) == pos.y;
+                } else if (symbol.equals("EAST")) {
+                    Pos pos = getXY((String) args[0]);
+                    return (pos.x + 1) + "," + pos.y;
+                } else if (symbol.equals("WEST")) {
+                    Pos pos = getXY((String) args[0]);
+                    return (pos.x - 1) + "," + pos.y;
+                } else if (symbol.equals("SOUTH")) {
+                    Pos pos = getXY((String) args[0]);
+                    return pos.x + "," + (pos.y - 1);
+                } else if (symbol.equals("NORTH")) {
+                    Pos pos = getXY((String) args[0]);
+                    return pos.x + "," + (pos.y + 1);
+                }
+                return null;
+            }
+
+            private Pos getXY(String arg) {
+                int x, y;
+                if (arg.equals("Agent")) {
+                    ObjectInstance agent = sh.s.getObjectsOfTrueClass(GridWorldDomain.CLASSAGENT).get(0);
+                    x = agent.getDiscValForAttribute(GridWorldDomain.ATTX);
+                    y = agent.getDiscValForAttribute(GridWorldDomain.ATTY);
+                } else {
+                    String[] coord = arg.split(",");
+                    x = Integer.valueOf(coord[0]);
+                    y = Integer.valueOf(coord[1]);
+                }
+                return new Pos(x, y);
+            }
+
+            class Pos {
+                public int x, y;
+
+                public Pos(int x, int y) {
+                    this.x = x;
+                    this.y = y;
+                }
+            }
+        };
+
     }
 
     public Tree.Node createRoomRockDomainAgent(Scaffolding scaff, Tree.Node parentStep) {

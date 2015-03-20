@@ -98,10 +98,10 @@ public class TestingGrammarLearner {
         gp.addLogic(GrammarRule.LOGIC_RULE_NOT);
         gp.addLogic(GrammarRule.LOGIC_RULE_OR);
 
-        ((ChunkGrammarParser)gp).addChunck("WALL(EAST(Agent))");
-        ((ChunkGrammarParser)gp).addChunck("WALL(WEST(Agent))");
-        ((ChunkGrammarParser)gp).addChunck("WALL(NORTH(Agent))");
-        ((ChunkGrammarParser)gp).addChunck("WALL(SOUTH(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(EAST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(WEST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(NORTH(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(SOUTH(Agent))");
 
         ep = new ExpressionParser("Agent") {
 
@@ -203,25 +203,25 @@ public class TestingGrammarLearner {
         gp.addLogic(GrammarRule.LOGIC_RULE_NOT);
         gp.addLogic(GrammarRule.LOGIC_RULE_OR);
 
-        ((ChunkGrammarParser)gp).addChunck("WALL(EAST(Agent))");
-        ((ChunkGrammarParser)gp).addChunck("WALL(WEST(Agent))");
-        ((ChunkGrammarParser)gp).addChunck("WALL(NORTH(Agent))");
-        ((ChunkGrammarParser)gp).addChunck("WALL(SOUTH(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(EAST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(WEST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(NORTH(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(SOUTH(Agent))");
 
-        ((ChunkGrammarParser)gp).addChunck("ROCK(EAST(Agent))");
-        ((ChunkGrammarParser)gp).addChunck("ROCK(WEST(Agent))");
-        ((ChunkGrammarParser)gp).addChunck("ROCK(NORTH(Agent))");
-        ((ChunkGrammarParser)gp).addChunck("ROCK(SOUTH(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("ROCK(EAST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("ROCK(WEST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("ROCK(NORTH(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("ROCK(SOUTH(Agent))");
 
-        ((ChunkGrammarParser)gp).addChunck("WALL(EAST(EAST(Agent)))");
-        ((ChunkGrammarParser)gp).addChunck("WALL(WEST(WEST(Agent)))");
-        ((ChunkGrammarParser)gp).addChunck("WALL(NORTH(NORTH(Agent)))");
-        ((ChunkGrammarParser)gp).addChunck("WALL(SOUTH(SOUTH(Agent)))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(EAST(EAST(Agent)))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(WEST(WEST(Agent)))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(NORTH(NORTH(Agent)))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(SOUTH(SOUTH(Agent)))");
 
-        ((ChunkGrammarParser)gp).addChunck("GOAL(EAST(EAST(Agent)))");
-        ((ChunkGrammarParser)gp).addChunck("GOAL(WEST(WEST(Agent)))");
-        ((ChunkGrammarParser)gp).addChunck("GOAL(NORTH(NORTH(Agent)))");
-        ((ChunkGrammarParser)gp).addChunck("GOAL(SOUTH(SOUTH(Agent)))");
+        ((ChunkGrammarParser) gp).addChunck("GOAL(EAST(EAST(Agent)))");
+        ((ChunkGrammarParser) gp).addChunck("GOAL(WEST(WEST(Agent)))");
+        ((ChunkGrammarParser) gp).addChunck("GOAL(NORTH(NORTH(Agent)))");
+        ((ChunkGrammarParser) gp).addChunck("GOAL(SOUTH(SOUTH(Agent)))");
 
         ep = new ExpressionParser("Agent") {
 
@@ -290,18 +290,19 @@ public class TestingGrammarLearner {
             outputPath = outputPath + "/";
         }
         //discount= 0.99; initialQ=0.0; learning rate=0.5; lambda=1.0
-        LearningAgent agent = new GrammarLearner(domain, rf, tf, 0.99, hashingFactory, gp, ep, 0);
+        LearningAgent agent = new GrammarLearner(domain, rf, tf, 0.99, hashingFactory, gp, ep, 1);
 
         //run learning for 1000 episodes
         int maxTimeSteps = 200;
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 50; i++) {
             EpisodeAnalysis ea = agent.runLearningEpisodeFrom(initialState, maxTimeSteps);
             //if(ea.numTimeSteps() < maxTimeSteps)
             ea.writeToFile(String.format("%se%03d", outputPath, i), sp);
-            System.out.println(i + " got reward " + ea.getReward(ea.numTimeSteps() - 1) + " in " +
+            double sum = 0;
+            for (int j = 1; j < ea.numTimeSteps(); j++)
+                sum += ea.getReward(j);
+            System.out.println(i + ": Total reward " + sum + " in " +
                     ea.numTimeSteps() + " steps.");
-            if ((ea.getReward(ea.numTimeSteps() - 1) > 0 && ea.numTimeSteps() < 23))
-                break;
         }
 
 
