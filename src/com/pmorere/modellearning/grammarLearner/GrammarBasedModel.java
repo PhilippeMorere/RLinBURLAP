@@ -316,19 +316,22 @@ public class GrammarBasedModel extends Model {
 
         protected void setNewCurrentExpression(String subExpression) {
             while (potentialExpressions == null || potentialExpressions.isEmpty()) {
-                // Generate new expressions from grammar
 
-                if (subExpression == null && !(grammarParser instanceof ChunkGrammarParser) && grammarLevel == 3)
-                    return;//throw new RuntimeException("Grammar level 3!");
+                // Generate new expressions from grammar
                 if (subExpression == null)
                     if (grammarParser instanceof ChunkGrammarParser) {
                         ((ChunkGrammarParser) grammarParser).setGrammarLevel(grammarLevel++);
-                        potentialExpressions = grammarParser.generateNExpsFromGrammar(10);
-                    } else
+                        potentialExpressions = grammarParser.generateNExpsFromGrammar(10 * grammarLevel);
+                    } else if (grammarLevel < 3)
                         potentialExpressions = grammarParser.generateAllExpsFromGrammar(grammarLevel++);
-                else
-                    potentialExpressions = grammarParser.generateAllExpsFromSubExpression(subExpression);
-
+                    else return; //throw new RuntimeException("Grammar level 3!");
+                else { // Generate expressions from subexpression
+                    if (grammarParser instanceof ChunkGrammarParser) {
+                        ((ChunkGrammarParser) grammarParser).setGrammarLevel(grammarLevel++);
+                        potentialExpressions = ((ChunkGrammarParser) grammarParser).generateNExpsFromSubExpression(subExpression, 10 * grammarLevel);
+                    } else
+                        potentialExpressions = grammarParser.generateAllExpsFromSubExpression(subExpression);
+                }
 
                 // Go through the state memory of similar action (different effect or not)
                 for (Map.Entry<ActionEffect, ExpressionsForEffect> entry1 : allExpressions.entrySet())

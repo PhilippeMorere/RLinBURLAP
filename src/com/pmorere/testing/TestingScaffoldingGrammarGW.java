@@ -15,10 +15,12 @@ import burlap.oomdp.singleagent.SADomain;
 import burlap.oomdp.singleagent.common.SinglePFTF;
 import burlap.oomdp.singleagent.common.UniformCostRF;
 import burlap.oomdp.visualizer.Visualizer;
+import com.pmorere.modellearning.grammarLearner.grammar.ChunkGrammarParser;
 import com.pmorere.modellearning.grammarLearner.grammar.ExpressionParser;
 import com.pmorere.modellearning.grammarLearner.GrammarLearner;
 import com.pmorere.modellearning.grammarLearner.grammar.GrammarParser;
 import com.pmorere.modellearning.ModelLearner;
+import com.pmorere.modellearning.grammarLearner.grammar.GrammarRule;
 import com.pmorere.modellearning.scaffolding.Scaffolding;
 import com.pmorere.modellearning.scaffolding.Tree;
 
@@ -43,16 +45,21 @@ public class TestingScaffoldingGrammarGW {
 
     public TestingScaffoldingGrammarGW() {
         // Set up the grammar
-        gp = new GrammarParser();
+        gp = new ChunkGrammarParser();
         gp.addRule("Agent", "place");
         gp.addRule("EAST", "place", "place");
         gp.addRule("WEST", "place", "place");
         gp.addRule("NORTH", "place", "place");
         gp.addRule("SOUTH", "place", "place");
         gp.addRule("EMPTY", "place", GrammarParser.BOOLEAN);
-        gp.addRule("AND", new String[]{GrammarParser.BOOLEAN, GrammarParser.BOOLEAN}, GrammarParser.BOOLEAN);
-        gp.addRule("OR", new String[]{GrammarParser.BOOLEAN, GrammarParser.BOOLEAN}, GrammarParser.BOOLEAN);
-        gp.addRule("NOT", GrammarParser.BOOLEAN, GrammarParser.BOOLEAN);
+        gp.addLogic(GrammarRule.LOGIC_RULE_AND);
+        gp.addLogic(GrammarRule.LOGIC_RULE_NOT);
+        gp.addLogic(GrammarRule.LOGIC_RULE_OR);
+
+        ((ChunkGrammarParser) gp).addChunck("EMPTY(EAST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("EMPTY(WEST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("EMPTY(NORTH(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("EMPTY(SOUTH(Agent))");
     }
 
     private ExpressionParser setupGrammar(final GridWorldDomain gwdg) {
@@ -62,13 +69,7 @@ public class TestingScaffoldingGrammarGW {
 
             @Override
             public Object evaluateOperator(String symbol, Object[] args) {
-                if (symbol.equals("AND"))
-                    return (Boolean) args[0] && (Boolean) args[1];
-                else if (symbol.equals("OR"))
-                    return (Boolean) args[0] || (Boolean) args[1];
-                else if (symbol.equals("NOT"))
-                    return !(Boolean) args[0];
-                else if (symbol.equals("EMPTY")) {
+                if (symbol.equals("EMPTY")) {
                     Pos pos = getXY((String) args[0]);
                     if (pos.x >= gwdg.getWidth() || pos.x < 0 || pos.y >= gwdg.getHeight() || pos.y < 0)
                         return false;

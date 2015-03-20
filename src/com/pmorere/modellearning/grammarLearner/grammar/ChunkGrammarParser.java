@@ -8,7 +8,7 @@ import java.util.Random;
  * Created by philippe on 19/03/15.
  */
 public class ChunkGrammarParser extends GrammarParser {
-
+    private String subExpression;
     private int grammarLevel = 0;
     /**
      * Chunks are simple expressions containing no logic, such as EMPTY(EAST(Agent)) or ROCK(WEST(WEST(Agent)))*
@@ -30,6 +30,7 @@ public class ChunkGrammarParser extends GrammarParser {
      */
     @Override
     public List<String> generateNExpsFromGrammar(int n) {
+        subExpression = null;
         // Build the N expressions
         List<String> expressions = new ArrayList<String>();
         int tries = 0;
@@ -46,7 +47,13 @@ public class ChunkGrammarParser extends GrammarParser {
 
     private String generateExpFromGrammar(int level) {
         if (level == 0)
-            return chunks.get((int) (Math.random() * chunks.size()));
+            if (subExpression == null)
+                return chunks.get((int) (Math.random() * chunks.size()));
+            else {
+                String temp = subExpression;
+                subExpression = null;
+                return temp;
+            }
 
         GrammarRule rule = this.logicRules.get((int) (Math.random() * logicRules.size()));
         if (rule.inputs.length == 1)
@@ -55,5 +62,10 @@ public class ChunkGrammarParser extends GrammarParser {
             return rule.name + "(" + generateExpFromGrammar(level - 1) + "," + generateExpFromGrammar(level - 1) + ")";
         else
             throw new RuntimeException("Can only generate expressions with logic rules having 1 or 2 inputs");
+    }
+
+    public List<String> generateNExpsFromSubExpression(String subExpression, int n) {
+        this.subExpression = subExpression;
+        return generateNExpsFromGrammar(n);
     }
 }

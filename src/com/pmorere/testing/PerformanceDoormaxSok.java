@@ -128,8 +128,8 @@ public class PerformanceDoormaxSok extends TestingScaffoldingDoormaxSok {
 
         StateGenerator sg = new ConstantStateGenerator(this.initialState);
 
-        LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter((SADomain) this.domain,
-                rf, sg, 10, 50, GLFactory, doormaxFactory);
+        LearningAlgorithmExperimenter exp = new CustomExperimenter((SADomain) this.domain,
+                rf, sg, 10, 50, 200, GLFactory, doormaxFactory);
 
         exp.setUpPlottingConfiguration(600, 350, 2, 1200,
                 TrialMode.MOSTRECENTANDAVERAGE,

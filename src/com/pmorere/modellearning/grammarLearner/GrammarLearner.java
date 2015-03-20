@@ -61,7 +61,7 @@ public class GrammarLearner extends OOMDPPlanner implements LearningAgent, QComp
                           StateHashFactory hashingFactory, GrammarParser grammarParser,
                           ExpressionParser expressionParser, double rmax) {
         this.plannerInit(domain, rf, tf, gamma, hashingFactory);
-        this.model = new GrammarBasedModel(domain, hashingFactory, grammarParser, expressionParser);
+        this.model = new ScaffoldingGrammarBasedModel(domain, hashingFactory, grammarParser, expressionParser);
 
         ModeledDomainGenerator mdg = new ModeledDomainGenerator(domain, this.model, true);
         this.modeledDomain = mdg.generateDomain();
