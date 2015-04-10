@@ -11,6 +11,7 @@ import burlap.oomdp.singleagent.RewardFunction;
 import burlap.oomdp.singleagent.SADomain;
 import burlap.oomdp.singleagent.common.UniformCostRF;
 import burlap.oomdp.visualizer.Visualizer;
+import com.pmorere.modellearning.grammarLearner.grammar.ChunkGrammarParser;
 import com.pmorere.modellearning.grammarLearner.grammar.ExpressionParser;
 import com.pmorere.modellearning.grammarLearner.GrammarLearner;
 import com.pmorere.modellearning.grammarLearner.grammar.GrammarParser;
@@ -40,18 +41,39 @@ public class TestingScaffoldingGrammarSok {
 
     public TestingScaffoldingGrammarSok() {
         // Set up the grammar
-        gp = new GrammarParser();
+        gp = new ChunkGrammarParser();
         gp.addRule("Agent", "place");
         gp.addRule("EAST", "place", "place");
         gp.addRule("WEST", "place", "place");
         gp.addRule("NORTH", "place", "place");
         gp.addRule("SOUTH", "place", "place");
+        gp.addRule("EMPTY", "place", GrammarParser.BOOLEAN);
         gp.addRule("WALL", "place", GrammarParser.BOOLEAN);
         gp.addRule("GOAL", "place", GrammarParser.BOOLEAN);
         gp.addRule("ROCK", "place", GrammarParser.BOOLEAN);
         gp.addLogic(GrammarRule.LOGIC_RULE_AND);
-        gp.addLogic(GrammarRule.LOGIC_RULE_OR);
         gp.addLogic(GrammarRule.LOGIC_RULE_NOT);
+        gp.addLogic(GrammarRule.LOGIC_RULE_OR);
+
+        ((ChunkGrammarParser) gp).addChunck("EMPTY(EAST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("EMPTY(WEST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("EMPTY(NORTH(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("EMPTY(SOUTH(Agent))");
+
+        ((ChunkGrammarParser) gp).addChunck("WALL(EAST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(WEST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(NORTH(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(SOUTH(Agent))");
+
+        ((ChunkGrammarParser) gp).addChunck("ROCK(EAST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("ROCK(WEST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("ROCK(NORTH(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("ROCK(SOUTH(Agent))");
+
+        ((ChunkGrammarParser) gp).addChunck("GOAL(EAST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("GOAL(WEST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("GOAL(NORTH(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("GOAL(SOUTH(Agent))");
     }
 
     private ExpressionParser setupGrammar(final SokobanDomain gwdg) {
@@ -72,7 +94,12 @@ public class TestingScaffoldingGrammarSok {
                     if (pos.x >= gwdg.getWidth() || pos.x < 0 || pos.y >= gwdg.getHeight() || pos.y < 0)
                         return true;
                     return map[pos.x][pos.y] != 0;
-                } else if (symbol.equals("GOAL")) {
+                } else if (symbol.equals("EMPTY")) {
+                    Pos pos = getXY((String) args[0]);
+                    if (pos.x >= gwdg.getWidth() || pos.x < 0 || pos.y >= gwdg.getHeight() || pos.y < 0)
+                        return false;
+                    return map[pos.x][pos.y] == 0;
+                }else if (symbol.equals("GOAL")) {
                     Pos pos = getXY((String) args[0]);
                     ObjectInstance goal = sh.s.getFirstObjectOfClass(SokobanDomain.CLASSLOCATION);
                     if (goal == null)

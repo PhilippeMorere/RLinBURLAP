@@ -15,11 +15,11 @@ import burlap.oomdp.singleagent.SADomain;
 import burlap.oomdp.singleagent.common.SinglePFTF;
 import burlap.oomdp.singleagent.common.UniformCostRF;
 import burlap.oomdp.visualizer.Visualizer;
+import com.pmorere.modellearning.ModelLearner;
+import com.pmorere.modellearning.grammarLearner.GrammarLearner;
 import com.pmorere.modellearning.grammarLearner.grammar.ChunkGrammarParser;
 import com.pmorere.modellearning.grammarLearner.grammar.ExpressionParser;
-import com.pmorere.modellearning.grammarLearner.GrammarLearner;
 import com.pmorere.modellearning.grammarLearner.grammar.GrammarParser;
-import com.pmorere.modellearning.ModelLearner;
 import com.pmorere.modellearning.grammarLearner.grammar.GrammarRule;
 import com.pmorere.modellearning.scaffolding.Scaffolding;
 import com.pmorere.modellearning.scaffolding.Tree;
@@ -52,6 +52,7 @@ public class TestingScaffoldingGrammarGW {
         gp.addRule("NORTH", "place", "place");
         gp.addRule("SOUTH", "place", "place");
         gp.addRule("EMPTY", "place", GrammarParser.BOOLEAN);
+        gp.addRule("WALL", "place", GrammarParser.BOOLEAN);
         gp.addLogic(GrammarRule.LOGIC_RULE_AND);
         gp.addLogic(GrammarRule.LOGIC_RULE_NOT);
         gp.addLogic(GrammarRule.LOGIC_RULE_OR);
@@ -60,6 +61,11 @@ public class TestingScaffoldingGrammarGW {
         ((ChunkGrammarParser) gp).addChunck("EMPTY(WEST(Agent))");
         ((ChunkGrammarParser) gp).addChunck("EMPTY(NORTH(Agent))");
         ((ChunkGrammarParser) gp).addChunck("EMPTY(SOUTH(Agent))");
+
+        ((ChunkGrammarParser) gp).addChunck("WALL(EAST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(WEST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(NORTH(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(SOUTH(Agent))");
     }
 
     private ExpressionParser setupGrammar(final GridWorldDomain gwdg) {
@@ -69,7 +75,12 @@ public class TestingScaffoldingGrammarGW {
 
             @Override
             public Object evaluateOperator(String symbol, Object[] args) {
-                if (symbol.equals("EMPTY")) {
+                if (symbol.equals("WALL")) {
+                    Pos pos = getXY((String) args[0]);
+                    if (pos.x >= gwdg.getWidth() || pos.x < 0 || pos.y >= gwdg.getHeight() || pos.y < 0)
+                        return true;
+                    return map[pos.x][pos.y] != 0;
+                } else if (symbol.equals("EMPTY")) {
                     Pos pos = getXY((String) args[0]);
                     if (pos.x >= gwdg.getWidth() || pos.x < 0 || pos.y >= gwdg.getHeight() || pos.y < 0)
                         return false;
@@ -96,6 +107,9 @@ public class TestingScaffoldingGrammarGW {
                     ObjectInstance agent = sh.s.getObjectsOfTrueClass(GridWorldDomain.CLASSAGENT).get(0);
                     x = agent.getDiscValForAttribute(GridWorldDomain.ATTX);
                     y = agent.getDiscValForAttribute(GridWorldDomain.ATTY);
+
+                    if (x >= gwdg.getWidth() || x < 0 || y >= gwdg.getHeight() || y < 0 || map[x][y] != 0)
+                        throw new RuntimeException("Agent (" + x + "," + y + ") is not on an empty cell!\n" + sh.s);
                 } else {
                     String[] coord = arg.split(",");
                     x = Integer.valueOf(coord[0]);
@@ -269,7 +283,7 @@ public class TestingScaffoldingGrammarGW {
 
         // Create the agent and add it to the scaffolding tree
         ModelLearner agent = new GrammarLearner(domain, rf, tf, 0.99, hashingFactory, gp, setupGrammar(gwdg), 0);
-        return scaff.addScaffoldingElementTo(parentStep, "Vertical_domain", domain, agent, initialState, new GridWorldStateParser(domain), gwdg.getMap(), 1, 10);
+        return scaff.addScaffoldingElementTo(parentStep, "Vertical_domain", domain, agent, initialState, new GridWorldStateParser(domain), gwdg.getMap(), 1, 20);
     }
 
     public Tree.Node createHorizontalDomainAgent(Scaffolding scaff, Tree.Node parentStep) {
@@ -345,7 +359,7 @@ public class TestingScaffoldingGrammarGW {
 
         // Create the agent and add it to the scaffolding tree
         ModelLearner agent = new GrammarLearner(domain, rf, tf, 0.99, hashingFactory, gp, setupGrammar(gwdg), 0);
-        return scaff.addScaffoldingElementTo(parentStep, "Horizontal_domain", domain, agent, initialState, new GridWorldStateParser(domain), gwdg.getMap(), 1, 10);
+        return scaff.addScaffoldingElementTo(parentStep, "Horizontal_domain", domain, agent, initialState, new GridWorldStateParser(domain), gwdg.getMap(), 1, 20);
     }
 
 
@@ -383,8 +397,6 @@ public class TestingScaffoldingGrammarGW {
         }
         agent.printModel();
         visualizeGridWorld(outputPath);
-
-        throw new RuntimeException("Wrong implrementation of scaffolding with grammar. Think about it...");
     }
 
 

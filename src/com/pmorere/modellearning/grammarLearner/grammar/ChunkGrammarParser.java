@@ -10,6 +10,7 @@ import java.util.Random;
 public class ChunkGrammarParser extends GrammarParser {
     private String subExpression;
     private int grammarLevel = 0;
+    private boolean subExpressionUsed;
     /**
      * Chunks are simple expressions containing no logic, such as EMPTY(EAST(Agent)) or ROCK(WEST(WEST(Agent)))*
      */
@@ -31,11 +32,22 @@ public class ChunkGrammarParser extends GrammarParser {
     @Override
     public List<String> generateNExpsFromGrammar(int n) {
         subExpression = null;
+        return generateNExpsFromGrammarHelper(n);
+    }
+
+    private List<String> generateNExpsFromGrammarHelper(int n) {
         // Build the N expressions
         List<String> expressions = new ArrayList<String>();
+        // Basic: returns the chunks only
+        if (grammarLevel == 0) {
+            expressions.addAll(chunks);
+            return expressions;
+        }
+
         int tries = 0;
         Random rn = new Random();
         while (expressions.size() < n && (expressions.size() + 1) * 3 >= tries) {
+            this.subExpressionUsed = false;
             int level = rn.nextInt(grammarLevel + 1);
             String exp = generateExpFromGrammar(level);
             if (!expressions.contains(exp))
@@ -47,12 +59,11 @@ public class ChunkGrammarParser extends GrammarParser {
 
     private String generateExpFromGrammar(int level) {
         if (level == 0)
-            if (subExpression == null)
+            if (subExpression == null || subExpressionUsed)
                 return chunks.get((int) (Math.random() * chunks.size()));
             else {
-                String temp = subExpression;
-                subExpression = null;
-                return temp;
+                subExpressionUsed = true;
+                return subExpression;
             }
 
         GrammarRule rule = this.logicRules.get((int) (Math.random() * logicRules.size()));
@@ -66,6 +77,6 @@ public class ChunkGrammarParser extends GrammarParser {
 
     public List<String> generateNExpsFromSubExpression(String subExpression, int n) {
         this.subExpression = subExpression;
-        return generateNExpsFromGrammar(n);
+        return generateNExpsFromGrammarHelper(n);
     }
 }

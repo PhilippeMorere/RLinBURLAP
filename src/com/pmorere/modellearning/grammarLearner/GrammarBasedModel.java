@@ -69,7 +69,12 @@ public class GrammarBasedModel extends Model {
 
     @Override
     public boolean transitionIsModeled(State s, GroundedAction ga) {
-        return !getTransitionProbabilities(s, ga).isEmpty();
+        StateHashTuple sh = hashingFactory.hashState(s);
+        for (Map.Entry<ActionEffect, ExpressionsForEffect> entry : allExpressions.entrySet())
+            if (entry.getKey().ga.equals(ga) && entry.getValue().stateMemory.contains(sh))
+                return true;
+        return false;
+        //return !getTransitionProbabilities(s, ga).isEmpty();
     }
 
     @Override
@@ -179,6 +184,7 @@ public class GrammarBasedModel extends Model {
         gp.addRule("NORTH", "place", "place");
         gp.addRule("SOUTH", "place", "place");
         gp.addRule("EMPTY", "place", GrammarParser.BOOLEAN);
+        gp.addRule("WALL", "place", GrammarParser.BOOLEAN);
         gp.addLogic(GrammarRule.LOGIC_RULE_AND);
         gp.addLogic(GrammarRule.LOGIC_RULE_NOT);
         gp.addLogic(GrammarRule.LOGIC_RULE_OR);
@@ -187,6 +193,12 @@ public class GrammarBasedModel extends Model {
         ((ChunkGrammarParser) gp).addChunck("EMPTY(WEST(Agent))");
         ((ChunkGrammarParser) gp).addChunck("EMPTY(NORTH(Agent))");
         ((ChunkGrammarParser) gp).addChunck("EMPTY(SOUTH(Agent))");
+
+        ((ChunkGrammarParser) gp).addChunck("WALL(EAST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(WEST(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(NORTH(Agent))");
+        ((ChunkGrammarParser) gp).addChunck("WALL(SOUTH(Agent))");
+
 
         ExpressionParser ep = new ExpressionParser("Agent") {
 
@@ -199,6 +211,11 @@ public class GrammarBasedModel extends Model {
                     if (pos.x >= gwd.getWidth() || pos.x < 0 || pos.y >= gwd.getHeight() || pos.y < 0)
                         return false;
                     return map[pos.x][pos.y] == 0;
+                } else if (symbol.equals("WALL")) {
+                    Pos pos = getXY((String) args[0]);
+                    if (pos.x >= gwd.getWidth() || pos.x < 0 || pos.y >= gwd.getHeight() || pos.y < 0)
+                        return true;
+                    return map[pos.x][pos.y] != 0;
                 } else if (symbol.equals("EAST")) {
                     Pos pos = getXY((String) args[0]);
                     return (pos.x + 1) + "," + pos.y;
@@ -307,25 +324,27 @@ public class GrammarBasedModel extends Model {
 
         protected int grammarLevel = 0;
 
+        protected String subExpression = null;
+
         public ExpressionsForEffect(Effect effect, GroundedAction ga) {
             this.effect = effect;
             this.ga = ga;
             this.stateMemory = new HashSet<StateHashTuple>();
-            this.setNewCurrentExpression(null);
+            this.potentialExpressions = new ArrayList<String>();
         }
 
-        protected void setNewCurrentExpression(String subExpression) {
+        protected void setNewCurrentExpression() {
             while (potentialExpressions == null || potentialExpressions.isEmpty()) {
 
                 // Generate new expressions from grammar
-                if (subExpression == null)
+                if (subExpression == null) {
                     if (grammarParser instanceof ChunkGrammarParser) {
                         ((ChunkGrammarParser) grammarParser).setGrammarLevel(grammarLevel++);
                         potentialExpressions = grammarParser.generateNExpsFromGrammar(10 * grammarLevel);
                     } else if (grammarLevel < 3)
                         potentialExpressions = grammarParser.generateAllExpsFromGrammar(grammarLevel++);
                     else return; //throw new RuntimeException("Grammar level 3!");
-                else { // Generate expressions from subexpression
+                } else { // Generate expressions from subexpression
                     if (grammarParser instanceof ChunkGrammarParser) {
                         ((ChunkGrammarParser) grammarParser).setGrammarLevel(grammarLevel++);
                         potentialExpressions = ((ChunkGrammarParser) grammarParser).generateNExpsFromSubExpression(subExpression, 10 * grammarLevel);
@@ -350,7 +369,7 @@ public class GrammarBasedModel extends Model {
         protected void checkCurrentExpression() {
             // If the current expression is not in the potential ones, find a new current expression
             if (!potentialExpressions.contains(currentExpression))
-                setNewCurrentExpression(null);
+                setNewCurrentExpression();
         }
 
         protected void addStateToMemory(StateHashTuple sh) {
@@ -434,11 +453,9 @@ public class GrammarBasedModel extends Model {
 
         @Override
         public String toString() {
-            return "Effect{" +
-                    "type=" + type.name() +
-                    ", objectName='" + objectName + '\'' +
-                    ", attName='" + attName + '\'' +
-                    '}';
+            if (type == EffectTypes.NOEFFECT)
+                return "NO EFFECT";
+            return type.name() + " " + attName + " of " + objectName;
         }
 
         @Override
