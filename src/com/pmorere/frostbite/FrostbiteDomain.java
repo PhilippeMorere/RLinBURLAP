@@ -41,6 +41,10 @@ public class FrostbiteDomain implements DomainGenerator {
      */
     public static final String BUILDINGATTNAME = "buildingAtt";
     /**
+     * Constant for the name of the activated status of a platform
+     */
+    public static final String ACTIVATEDATTNAME = "activatedAtt";
+    /**
      * Constant for the name of the obstacle OO-MDP class
      */
     public static final String PLATFORMCLASS = "platform";
@@ -67,12 +71,12 @@ public class FrostbiteDomain implements DomainGenerator {
 
 
     public static final String PFONPLATFORM = "pfOnPlatform";
+    public static final String PFPLATFORMACTIVE = "pfPlatformActive";
     public static final String PFONICE = "pfOnIce";
     public static final String PFIGLOOBUILT = "pfIglooBuilt";
     public static final String PFINWATER = "pfInWater";
-
     private static final int SCALE = 5;
-    protected static final int gameHeight = 150 * SCALE;
+    protected static final int gameHeight = 130 * SCALE;
     protected static final int gameIceHeight = gameHeight / 4;
     protected static final int gameWidth = 160 * SCALE;
     private static final int jumpSize = 22 * SCALE;
@@ -89,14 +93,14 @@ public class FrostbiteDomain implements DomainGenerator {
      * there is a wall to the east, then with 0.2 probability, the agent will stay in place.
      */
     protected double[][] transitionDynamics;
+    protected int buildingStepsToWin = 16;
     private int numberPlatformRow = 4;
     private int numberPlatformCol = 4;
-    protected int buildingStepsToWin = 16;
     private int leftToJump = 0;
     private int agentSize = 8 * SCALE;
     private int platformSpeedOnAgent = 0;
     private int platformSize = 15 * SCALE;
-    private int platformHorizontalOffset = 20 * SCALE;
+    private int spaceBetweenPlatforms = 26 * SCALE;
 
     public FrostbiteDomain() {
         setDeterministicTransitionDynamics();
@@ -148,6 +152,7 @@ public class FrostbiteDomain implements DomainGenerator {
         platform.setValue(XATTNAME, x);
         platform.setValue(YATTNAME, y);
         platform.setValue(SIZEATTNAME, ss);
+        platform.setValue(ACTIVATEDATTNAME, false);
     }
 
     private void setPlatformRow(Domain d, State s, int row) {
@@ -155,9 +160,10 @@ public class FrostbiteDomain implements DomainGenerator {
             ObjectInstance platform = new ObjectInstance(d.getObjectClass(PLATFORMCLASS), PLATFORMCLASS + (i + row * numberPlatformCol));
             s.addObject(platform);
 
-            platform.setValue(XATTNAME, platformSize + platformHorizontalOffset * i);
+            platform.setValue(XATTNAME, spaceBetweenPlatforms * i + ((row % 2 == 0) ? 0 : gameWidth / 3));
             platform.setValue(YATTNAME, gameIceHeight + jumpSize / 2 - platformSize / 2 + agentSize / 2 + jumpSize * row);
             platform.setValue(SIZEATTNAME, platformSize);
+            platform.setValue(ACTIVATEDATTNAME, false);
         }
     }
 
@@ -173,6 +179,8 @@ public class FrostbiteDomain implements DomainGenerator {
 
         ObjectInstance agent = new ObjectInstance(domain.getObjectClass(AGENTCLASS), AGENTCLASS + "0");
         s.addObject(agent);
+        ObjectInstance igloo = new ObjectInstance(domain.getObjectClass(IGLOOCLASS), IGLOOCLASS + "0");
+        s.addObject(igloo);
 
         for (int i = 0; i < numberPlatformRow; i++)
             setPlatformRow(domain, s, i);
@@ -220,6 +228,8 @@ public class FrostbiteDomain implements DomainGenerator {
         Attribute batt = new Attribute(domain, BUILDINGATTNAME, Attribute.AttributeType.INT);
         satt.setLims(0, 256); // It's an Atari game, it should crash at some point!
 
+        Attribute aatt = new Attribute(domain, ACTIVATEDATTNAME, Attribute.AttributeType.BOOLEAN);
+
         //create classes
         ObjectClass agentclass = new ObjectClass(domain, AGENTCLASS);
         agentclass.addAttribute(xatt);
@@ -229,6 +239,7 @@ public class FrostbiteDomain implements DomainGenerator {
         platformclass.addAttribute(xatt);
         platformclass.addAttribute(yatt);
         platformclass.addAttribute(satt);
+        platformclass.addAttribute(aatt);
 
         ObjectClass iglooclass = new ObjectClass(domain, IGLOOCLASS);
         iglooclass.addAttribute(batt);
@@ -242,6 +253,7 @@ public class FrostbiteDomain implements DomainGenerator {
 
 
         //add pfs
+        new PlatformActivePF(PFPLATFORMACTIVE, domain);
         new OnPlatformPF(PFONPLATFORM, domain);
         new InWaterPF(PFINWATER, domain);
         new OnIcePF(PFONICE, domain);
@@ -301,8 +313,11 @@ public class FrostbiteDomain implements DomainGenerator {
 
         // Is a jump triggered while player is on the ground?
         if (leftToJump <= 0 && yd != 0) {
-            leftToJump = yd * jumpSize;
-            platformSpeedOnAgent = 0;
+            // Player can only jump when on a platform (except last line), or when hitting down on the top part
+            if ((platformSpeedOnAgent != 0 && ay + yd * jumpSize < gameHeight - agentSize) || (platformSpeedOnAgent == 0 && yd > 0)) {
+                leftToJump = yd * jumpSize;
+                platformSpeedOnAgent = 0;
+            }
         }
 
         // If the player is in the air, move it.
@@ -345,6 +360,10 @@ public class FrostbiteDomain implements DomainGenerator {
 
         // Player landed
         if (leftToJump == 0) {
+            // Just landed: Potentially activate some platforms
+            if (platformSpeedOnAgent == 0)
+                activatePlatforms(s);
+
             platformSpeedOnAgent = getLandedPlatformSpeed(s);
 
             // Check if the agent landed on the top or in the water
@@ -354,9 +373,33 @@ public class FrostbiteDomain implements DomainGenerator {
                 System.out.println("Lost");
                 System.exit(0);
             }
+
         }
 
-        //TODO: implement
+        // If all platforms are active, deactivate them
+        for (int i = 0; i < platforms.size(); i++)
+            if (!platforms.get(i).getBooleanValue(ACTIVATEDATTNAME))
+                return;
+        for (int i = 0; i < platforms.size(); i++)
+            platforms.get(i).setValue(ACTIVATEDATTNAME, false);
+    }
+
+    private void activatePlatforms(State s) {
+        ObjectInstance agent = s.getObjectsOfTrueClass(AGENTCLASS).get(0);
+        int ax = agent.getDiscValForAttribute(XATTNAME) + agentSize / 2;
+        int ay = agent.getDiscValForAttribute(YATTNAME) + agentSize / 2;
+        List<ObjectInstance> platforms = s.getObjectsOfTrueClass(PLATFORMCLASS);
+        for (int i = 0; i < platforms.size(); i++) {
+            ObjectInstance platform = platforms.get(i);
+            if (!platform.getBooleanValue(ACTIVATEDATTNAME))
+                if (pointInPlatform(ax, ay, platform.getDiscValForAttribute(XATTNAME), platform.getDiscValForAttribute(YATTNAME), platform.getDiscValForAttribute(SIZEATTNAME))) {
+                    for (int j = numberPlatformCol * (i / numberPlatformCol); j < numberPlatformCol * (1 + i / numberPlatformCol); j++)
+                        platforms.get(j).setValue(ACTIVATEDATTNAME, true);
+                    ObjectInstance igloo = s.getFirstObjectOfClass(IGLOOCLASS);
+                    igloo.setValue(BUILDINGATTNAME, igloo.getDiscValForAttribute(BUILDINGATTNAME) + 1);
+                    break;
+                }
+        }
     }
 
     private int getLandedPlatformSpeed(State s) {
@@ -527,6 +570,24 @@ public class FrostbiteDomain implements DomainGenerator {
         }
 
 
+    }
+
+    public class PlatformActivePF extends PropositionalFunction {
+        /**
+         * Initializes to be evaluated on an agent object and platform object.
+         *
+         * @param name   the name of the propositional function
+         * @param domain the domain of the propositional function
+         */
+        public PlatformActivePF(String name, Domain domain) {
+            super(name, domain, new String[]{PLATFORMCLASS});
+        }
+
+        @Override
+        public boolean isTrue(State st, String[] params) {
+            ObjectInstance platform = st.getObject(params[0]);
+            return platform.getBooleanValue(ACTIVATEDATTNAME);
+        }
     }
 
     public class InWaterPF extends PropositionalFunction {

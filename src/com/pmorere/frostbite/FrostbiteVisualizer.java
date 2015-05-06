@@ -13,6 +13,9 @@ import java.awt.geom.Rectangle2D;
  * Created by philippe on 01/05/15.
  */
 public class FrostbiteVisualizer {
+    private final static Color activatedPlatformColor = new Color(0.73333335f, 0.84313726f, 0.9411765f);
+    private final static Color iglooColor = new Color(0.7294118f, 0.827451f, 0.84313726f);
+    private final static Color waterColor = new Color(0.34509805f, 0.43529412f, 0.60784316f);
     static int glob = 0;
 
     /**
@@ -28,7 +31,7 @@ public class FrostbiteVisualizer {
         v.addStaticPainter(new StaticPainter() {
             @Override
             public void paint(Graphics2D g2, State s, float cWidth, float cHeight) {
-                g2.setColor(Color.blue);
+                g2.setColor(waterColor);
                 g2.fill(new Rectangle2D.Double(0, 0, FrostbiteDomain.gameWidth, FrostbiteDomain.gameHeight));
                 g2.setColor(Color.white);
                 g2.fill(new Rectangle2D.Double(0, 0, FrostbiteDomain.gameWidth, FrostbiteDomain.gameIceHeight));
@@ -36,7 +39,7 @@ public class FrostbiteVisualizer {
         });
 
         v.addObjectClassPainter(FrostbiteDomain.PLATFORMCLASS, new PlatformPainter(fd));
-        v.addObjectClassPainter(FrostbiteDomain.AGENTCLASS, new IglooPainter(fd));
+        v.addObjectClassPainter(FrostbiteDomain.IGLOOCLASS, new IglooPainter(fd));
         v.addObjectClassPainter(FrostbiteDomain.AGENTCLASS, new AgentPainter(fd));
 
         return v;
@@ -54,11 +57,15 @@ public class FrostbiteVisualizer {
         public void paintObject(Graphics2D g2, State s, ObjectInstance ob,
                                 float cWidth, float cHeight) {
 
-            g2.setColor(Color.white);
 
             int x = ob.getDiscValForAttribute(FrostbiteDomain.XATTNAME);
             int y = ob.getDiscValForAttribute(FrostbiteDomain.YATTNAME);
             int size = ob.getDiscValForAttribute(FrostbiteDomain.SIZEATTNAME);
+            boolean activated = ob.getBooleanValue(FrostbiteDomain.ACTIVATEDATTNAME);
+            if (activated)
+                g2.setColor(activatedPlatformColor);
+            else
+                g2.setColor(Color.white);
 
             g2.fill(new Rectangle2D.Double(x, y, size, size));
 
@@ -103,11 +110,11 @@ public class FrostbiteVisualizer {
         public void paintObject(Graphics2D g2, State s, ObjectInstance ob,
                                 float cWidth, float cHeight) {
 
-            g2.setColor(Color.lightGray);
+            g2.setColor(iglooColor);
 
             int building = ob.getDiscValForAttribute(FrostbiteDomain.BUILDINGATTNAME);
 
-            int layer = 0;
+            int layer = -1; // just because ;)
             int maxLayer = fd.buildingStepsToWin;
             int brickHeight = FrostbiteDomain.gameHeight / (5 * maxLayer);
             int iglooWidth = FrostbiteDomain.gameWidth / 6;
@@ -116,7 +123,7 @@ public class FrostbiteVisualizer {
             for (; layer < Math.min(maxLayer, building) - 1; layer++) {
                 if (layer == maxLayer / 3) {
                     brickHeight /= 2;
-                    iglooOffsety = -layer * brickHeight;
+                    iglooOffsety = -(layer - 1) * brickHeight;
                 }
                 if (layer >= maxLayer / 3) {
                     iglooWidth -= FrostbiteDomain.gameWidth / (4 * maxLayer);
@@ -131,7 +138,7 @@ public class FrostbiteVisualizer {
                 int doorWidth = FrostbiteDomain.gameWidth / 28;
                 int doorHeight = FrostbiteDomain.gameHeight / 20;
                 g2.fill(new Rectangle2D.Double(3 * FrostbiteDomain.gameWidth / 4 + FrostbiteDomain.gameWidth / 12 - doorWidth / 2,
-                        FrostbiteDomain.gameHeight / 5 - doorHeight, doorWidth, doorHeight));
+                        FrostbiteDomain.gameHeight / 5 - doorHeight/2, doorWidth, doorHeight));
             }
         }
     }
