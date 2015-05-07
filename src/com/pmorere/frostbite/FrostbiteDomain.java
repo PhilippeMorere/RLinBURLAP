@@ -94,13 +94,13 @@ public class FrostbiteDomain implements DomainGenerator {
      */
     protected double[][] transitionDynamics;
     protected int buildingStepsToWin = 16;
-    private int numberPlatformRow = 4;
-    private int numberPlatformCol = 4;
+    private static int numberPlatformRow = 4;
+    private static int numberPlatformCol = 4;
     private int leftToJump = 0;
-    private int agentSize = 8 * SCALE;
+    private static int agentSize = 8 * SCALE;
     private int platformSpeedOnAgent = 0;
-    private int platformSize = 15 * SCALE;
-    private int spaceBetweenPlatforms = 26 * SCALE;
+    private static int platformSize = 15 * SCALE;
+    private static int spaceBetweenPlatforms = 26 * SCALE;
 
     public FrostbiteDomain() {
         setDeterministicTransitionDynamics();
@@ -124,7 +124,7 @@ public class FrostbiteDomain implements DomainGenerator {
     }
 
     /**
-     * Sets the agent/lander position/orientation and the velocity.
+     * Sets the agent s position
      *
      * @param s the state in which to set the agent
      * @param x the x position of the agent
@@ -138,24 +138,36 @@ public class FrostbiteDomain implements DomainGenerator {
     }
 
     /**
-     * Sets an obstacles boundaries/position
+     * Sets the igloo building status
      *
-     * @param s  the state in which the obstacle should be set
+     * @param s        the state in which to set the agent
+     * @param building igloo building status
+     */
+    public static void setIgloo(State s, int building) {
+        ObjectInstance agent = s.getObjectsOfTrueClass(IGLOOCLASS).get(0);
+
+        agent.setValue(BUILDINGATTNAME, building);
+    }
+
+    /**
+     * Sets an obstacles boundaries/position
+     *  @param s  the state in which the obstacle should be set
      * @param i  specifies the ith landing pad object to be set to these values
      * @param x  the left boundary
      * @param y  the right boundary
      * @param ss the bottom boundary
+     * @param activatedStatus the platform status
      */
-    public static void setPlatform(State s, int i, double x, double y, double ss) {
+    public static void setPlatform(State s, int i, double x, double y, double ss, boolean activatedStatus) {
         ObjectInstance platform = s.getObjectsOfTrueClass(PLATFORMCLASS).get(i);
 
         platform.setValue(XATTNAME, x);
         platform.setValue(YATTNAME, y);
         platform.setValue(SIZEATTNAME, ss);
-        platform.setValue(ACTIVATEDATTNAME, false);
+        platform.setValue(ACTIVATEDATTNAME, activatedStatus);
     }
 
-    private void setPlatformRow(Domain d, State s, int row) {
+    private static void setPlatformRow(Domain d, State s, int row) {
         for (int i = 0; i < numberPlatformCol; i++) {
             ObjectInstance platform = new ObjectInstance(d.getObjectClass(PLATFORMCLASS), PLATFORMCLASS + (i + row * numberPlatformCol));
             s.addObject(platform);
@@ -173,7 +185,7 @@ public class FrostbiteDomain implements DomainGenerator {
      * @param domain the domain of the state to generate
      * @return a state object
      */
-    public State getCleanState(Domain domain) {
+    public static State getCleanState(Domain domain) {
 
         State s = new State();
 
@@ -369,11 +381,6 @@ public class FrostbiteDomain implements DomainGenerator {
             // Check if the agent landed on the top or in the water
             ObjectInstance agent = s.getObjectsOfTrueClass(AGENTCLASS).get(0);
             int ay = agent.getDiscValForAttribute(YATTNAME) + agentSize / 2;
-            if (platformSpeedOnAgent == 0 && ay >= gameIceHeight) {
-                System.out.println("Lost");
-                System.exit(0);
-            }
-
         }
 
         // If all platforms are active, deactivate them
@@ -509,8 +516,6 @@ public class FrostbiteDomain implements DomainGenerator {
 
             return transitions;
         }
-
-
     }
 
     public class ActionIdle extends Action {
@@ -536,7 +541,6 @@ public class FrostbiteDomain implements DomainGenerator {
         public List<TransitionProbability> getTransitions(State s, String[] params) {
             return this.deterministicTransition(s, params);
         }
-
     }
 
     public class OnPlatformPF extends PropositionalFunction {
@@ -568,8 +572,6 @@ public class FrostbiteDomain implements DomainGenerator {
 
             return pointInPlatform(ax, ay, x, y, s);
         }
-
-
     }
 
     public class PlatformActivePF extends PropositionalFunction {
