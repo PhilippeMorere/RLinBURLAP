@@ -29,6 +29,15 @@ public class FrostbiteDomain implements DomainGenerator {
      */
     public static final String SIZEATTNAME = "sizeAtt";
     /**
+     * Constant for the name of the building step of the igloo
+     */
+    public static final String BUILDINGATTNAME = "buildingAtt";
+    /**
+     * Constant for the name of the activated status of a platform
+     */
+    public static final String ACTIVATEDATTNAME = "activatedAtt";
+
+    /**
      * Constant for the name of the agent OO-MDP class
      */
     public static final String AGENTCLASS = "agent";
@@ -37,17 +46,10 @@ public class FrostbiteDomain implements DomainGenerator {
      */
     public static final String IGLOOCLASS = "igloo";
     /**
-     * Constant for the name of the building step of the igloo
-     */
-    public static final String BUILDINGATTNAME = "buildingAtt";
-    /**
-     * Constant for the name of the activated status of a platform
-     */
-    public static final String ACTIVATEDATTNAME = "activatedAtt";
-    /**
      * Constant for the name of the obstacle OO-MDP class
      */
     public static final String PLATFORMCLASS = "platform";
+
     /**
      * Constant for the name of the north action
      */
@@ -69,13 +71,33 @@ public class FrostbiteDomain implements DomainGenerator {
      */
     public static final String ACTIONIDLE = "idle";
 
-
+    /**
+     * Constant for the name of the propositional function "agent is on platform"
+     */
     public static final String PFONPLATFORM = "pfOnPlatform";
+    /**
+     * Constant for the name of the propositional function "platform is active"
+     */
     public static final String PFPLATFORMACTIVE = "pfPlatformActive";
+    /**
+     * Constant for the name of the propositional function "agent is on ice"
+     */
     public static final String PFONICE = "pfOnIce";
+    /**
+     * Constant for the name of the propositional function "igloo is built"
+     */
     public static final String PFIGLOOBUILT = "pfIglooBuilt";
+    /**
+     * Constant for the name of the propositional function "agent is in water"
+     */
     public static final String PFINWATER = "pfInWater";
+    /**
+     * Constant to adjust the scale of the game
+     */
     private static final int SCALE = 5;
+    /**
+     * Game parameters
+     */
     protected static final int gameHeight = 130 * SCALE;
     protected static final int gameIceHeight = gameHeight / 4;
     protected static final int gameWidth = 160 * SCALE;
@@ -83,6 +105,13 @@ public class FrostbiteDomain implements DomainGenerator {
     private static final int stepSize = 2 * SCALE;
     private static final int jumpSpeed = jumpSize / 4;
     private static final int platformSpeed = 1 * SCALE;
+    private static int numberPlatformRow = 4;
+    private static int numberPlatformCol = 4;
+    private static int agentSize = 8 * SCALE;
+    private static int platformSize = 15 * SCALE;
+    private static int spaceBetweenPlatforms = 26 * SCALE;
+    private static boolean visualizingDomain = false;
+    protected int buildingStepsToWin = 16;
     /**
      * Matrix specifying the transition dynamics in terms of movement directions. The first index
      * indicates the action direction attempted (ordered north, south, east, west) the second index
@@ -93,21 +122,23 @@ public class FrostbiteDomain implements DomainGenerator {
      * there is a wall to the east, then with 0.2 probability, the agent will stay in place.
      */
     protected double[][] transitionDynamics;
-    protected int buildingStepsToWin = 16;
-    private static int numberPlatformRow = 4;
-    private static int numberPlatformCol = 4;
     private int leftToJump = 0;
-    private static int agentSize = 8 * SCALE;
     private int platformSpeedOnAgent = 0;
-    private static int platformSize = 15 * SCALE;
-    private static int spaceBetweenPlatforms = 26 * SCALE;
 
     public FrostbiteDomain() {
         setDeterministicTransitionDynamics();
     }
 
+    /**
+     * Main function to test the domain.
+     * Note: The termination conditions are not checked when testing the domain this way, which means it is
+     * impossible to win or die and might trigger bugs. To enable them, uncomment the code in the "update" function.
+     *
+     * @param args
+     */
     public static void main(String[] args) {
         FrostbiteDomain fd = new FrostbiteDomain();
+        fd.visualizingDomain = true;
         Domain d = fd.generateDomain();
         State s = fd.getCleanState(d);
 
@@ -150,12 +181,13 @@ public class FrostbiteDomain implements DomainGenerator {
     }
 
     /**
-     * Sets an obstacles boundaries/position
-     *  @param s  the state in which the obstacle should be set
-     * @param i  specifies the ith landing pad object to be set to these values
-     * @param x  the left boundary
-     * @param y  the right boundary
-     * @param ss the bottom boundary
+     * Sets a platform position, size and status
+     *
+     * @param s               the state in which the platform should be set
+     * @param i               specifies the ith platform object to be set to these values
+     * @param x               the x coordinate of the top left corner
+     * @param y               the y coordinate of the top left corner
+     * @param ss              the platform size
      * @param activatedStatus the platform status
      */
     public static void setPlatform(State s, int i, double x, double y, double ss, boolean activatedStatus) {
@@ -167,6 +199,13 @@ public class FrostbiteDomain implements DomainGenerator {
         platform.setValue(ACTIVATEDATTNAME, activatedStatus);
     }
 
+    /**
+     * Initializes a full row of platforms.
+     *
+     * @param d   domain
+     * @param s   the state to initialize the platforms in
+     * @param row the row id (starts at 0). Defines the direction platforms are going to move.
+     */
     private static void setPlatformRow(Domain d, State s, int row) {
         for (int i = 0; i < numberPlatformCol; i++) {
             ObjectInstance platform = new ObjectInstance(d.getObjectClass(PLATFORMCLASS), PLATFORMCLASS + (i + row * numberPlatformCol));
@@ -180,7 +219,7 @@ public class FrostbiteDomain implements DomainGenerator {
     }
 
     /**
-     * Creates a state with one agent/lander, one landing pad, and no number of obstacles.
+     * Creates a state with one agent, one igloo, and 4 rows of 4 platforms.
      *
      * @param domain the domain of the state to generate
      * @return a state object
@@ -201,6 +240,11 @@ public class FrostbiteDomain implements DomainGenerator {
         return s;
     }
 
+    /**
+     * Returns the agent size
+     *
+     * @return the agent size
+     */
     public int getAgentSize() {
         return agentSize;
     }
@@ -222,6 +266,11 @@ public class FrostbiteDomain implements DomainGenerator {
         }
     }
 
+    /**
+     * Creates a new frostbite domain.
+     *
+     * @return the generated domain object
+     */
     @Override
     public Domain generateDomain() {
 
@@ -308,11 +357,11 @@ public class FrostbiteDomain implements DomainGenerator {
     }
 
     /**
-     * Attempts to move the agent into the given position, taking into account walls and blocks
+     * Attempts to move the agent into the given position, taking into account platforms and screen borders
      *
      * @param s  the current state
-     * @param xd the attempted new X position of the agent
-     * @param yd the attempted new Y position of the agent
+     * @param xd the attempted X position increment of the agent
+     * @param yd the attempted Y position increment of the agent
      */
     protected void move(State s, int xd, int yd) {
 
@@ -359,6 +408,10 @@ public class FrostbiteDomain implements DomainGenerator {
         update(s);
     }
 
+    /**
+     * Executes update step on state. Handles everything that is not player specific.
+     * @param s the state to apply the update step on
+     */
     private void update(State s) {
         // Move the platforms
         List<ObjectInstance> platforms = s.getObjectsOfTrueClass(PLATFORMCLASS);
@@ -378,9 +431,20 @@ public class FrostbiteDomain implements DomainGenerator {
 
             platformSpeedOnAgent = getLandedPlatformSpeed(s);
 
-            // Check if the agent landed on the top or in the water
-            ObjectInstance agent = s.getObjectsOfTrueClass(AGENTCLASS).get(0);
-            int ay = agent.getDiscValForAttribute(YATTNAME) + agentSize / 2;
+            // Termination conditions (only used to test the domain)
+            if (visualizingDomain) {
+                ObjectInstance agent = s.getObjectsOfTrueClass(AGENTCLASS).get(0);
+                int ay = agent.getDiscValForAttribute(YATTNAME) + agentSize / 2;
+                ObjectInstance igloo = s.getObjectsOfTrueClass(IGLOOCLASS).get(0);
+                int building = igloo.getDiscValForAttribute(BUILDINGATTNAME);
+                if (platformSpeedOnAgent == 0 && ay > gameIceHeight) {
+                    System.out.println("Game over.");
+                    System.exit(0);
+                } else if (ay <= gameIceHeight && building >= buildingStepsToWin) {
+                    System.out.println("You won.");
+                    System.exit(0);
+                }
+            }
         }
 
         // If all platforms are active, deactivate them
@@ -391,6 +455,10 @@ public class FrostbiteDomain implements DomainGenerator {
             platforms.get(i).setValue(ACTIVATEDATTNAME, false);
     }
 
+    /**
+     * Activates platforms on which the user has landed (and the rest of the row).
+     * @param s State on which to activate the platforms
+     */
     private void activatePlatforms(State s) {
         ObjectInstance agent = s.getObjectsOfTrueClass(AGENTCLASS).get(0);
         int ax = agent.getDiscValForAttribute(XATTNAME) + agentSize / 2;
@@ -409,6 +477,11 @@ public class FrostbiteDomain implements DomainGenerator {
         }
     }
 
+    /**
+     * Checks whether the player is on a platform and return its platform speed if so.
+     * @param s State on which the check is made
+     * @return 0 if the player is not on a platform. Otherwise returns the platform speed of the platform the player is on.
+     */
     private int getLandedPlatformSpeed(State s) {
         ObjectInstance agent = s.getObjectsOfTrueClass(AGENTCLASS).get(0);
         int ax = agent.getDiscValForAttribute(XATTNAME) + agentSize / 2;
@@ -422,6 +495,15 @@ public class FrostbiteDomain implements DomainGenerator {
         return 0;
     }
 
+    /**
+     * Collision check between a point (player center) and a platform, including wrapping around edges
+     * @param px point X coordinate
+     * @param py point Y coordinate
+     * @param x platform top left corner X coordinate
+     * @param y platform top left corner Y coordinate
+     * @param s platform size
+     * @return true if the point is in the platform, false otherwise
+     */
     private boolean pointInPlatform(int px, int py, int x, int y, int s) {
         if (pointInPlatformHelper(px, py, x, y, s))
             return true;
@@ -432,10 +514,22 @@ public class FrostbiteDomain implements DomainGenerator {
         return false;
     }
 
+    /**
+     * Collision check between a point (player center) and a platform.
+     * @param px point X coordinate
+     * @param py point Y coordinate
+     * @param x platform top left corner X coordinate
+     * @param y platform top left corner Y coordinate
+     * @param s platform size
+     * @return true if the point is in the platform, false otherwise
+     */
     private boolean pointInPlatformHelper(int px, int py, int x, int y, int s) {
         return px > x && px < x + s && py > y && py < y + s;
     }
 
+    /**
+     * An action class for moving the agent.
+     */
     public class MovementAction extends Action {
 
         /**
